@@ -262,6 +262,16 @@ export function RegistrationForm({ variant }: { variant: RegistrationType }) {
               onChange={(v) => { setPlannedAt(v); clearError('planned-at'); }}
               hint={<Bi en={`Office hours ${officeStart} - ${officeEnd}`} zh={`辦公時間 ${officeStart} 至 ${officeEnd}`} />}
               error={errorFor('planned-at')}
+              labelAside={plannedAt ? (
+                <button
+                  type="button"
+                  className="link-button link-button--muted"
+                  id="clear-planned-at"
+                  onClick={() => { setPlannedAt(''); clearError('planned-at'); }}
+                >
+                  <Bi en="Clear" zh="清除" />
+                </button>
+              ) : undefined}
             />
           ) : (
             <TextField

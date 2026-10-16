@@ -30,6 +30,29 @@ export function TextField({
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
 
+  const control = (
+    <input
+      id={id}
+      name={id}
+      className={type === 'datetime-local' ? 'input input--datetime' : 'input'}
+      type={type}
+      value={value}
+      onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+      placeholder={placeholder}
+      readOnly={readOnly}
+      aria-readonly={readOnly || undefined}
+      required={required}
+      aria-required={required || undefined}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={describedBy}
+      maxLength={maxLength}
+      min={min}
+      autoComplete={autoComplete}
+      autoCapitalize={autoCapitalize}
+      inputMode={inputMode}
+    />
+  );
+
   return (
     <div className={`field${error ? ' field--invalid' : ''}`}>
       <div className="field__label-row">
@@ -44,26 +67,7 @@ export function TextField({
         </label>
         {labelAside}
       </div>
-      <input
-        id={id}
-        name={id}
-        className="input"
-        type={type}
-        value={value}
-        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-        placeholder={placeholder}
-        readOnly={readOnly}
-        aria-readonly={readOnly || undefined}
-        required={required}
-        aria-required={required || undefined}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        maxLength={maxLength}
-        min={min}
-        autoComplete={autoComplete}
-        autoCapitalize={autoCapitalize}
-        inputMode={inputMode}
-      />
+      {type === 'datetime-local' ? <div className="datetime-wrap">{control}</div> : control}
       {hint && <p id={hintId} className="field__hint">{hint}</p>}
       {error && (
         <p id={errorId} className="field__error">
