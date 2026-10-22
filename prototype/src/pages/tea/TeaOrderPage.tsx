@@ -3,15 +3,13 @@ import { useParams, useSearchParams } from 'react-router';
 import { PublicPage } from '../../components/PublicPage';
 import { ErrorSummary, type FieldError } from '../../components/ErrorSummary';
 import { Bi } from '../../components/Bi';
-import { DRINKS, ROOMS, TEA_SERVICE_HOURS, type Drink, type DrinkOption } from '../../data/catalog';
+import { DRINK_CATEGORIES, DRINKS, ROOMS, TEA_SERVICE_HOURS_EN, TEA_SERVICE_HOURS_ZH, isTeaServiceOpen } from '../../data/catalog';
 import { submitTeaOrder } from '../../data/store';
 import { useDemoSettings } from '../../data/demoSettings';
-import { minutesOfDay, minutesToTime } from '../../lib/date';
+import { minutesOfDay } from '../../lib/date';
 import { useNow } from '../../lib/hooks';
 
 const MAX_QTY = 20;
-const serviceStart = minutesToTime(TEA_SERVICE_HOURS.start);
-const serviceEnd = minutesToTime(TEA_SERVICE_HOURS.end);
 
 /** Prototype only: "?time=17:00" previews the page at another time of day. */
 function parsePreviewTime(value: string | null): number | null {
@@ -19,13 +17,8 @@ function parsePreviewTime(value: string | null): number | null {
   return m ? Number(m[1]) * 60 + Number(m[2]) : null;
 }
 
-/** One orderable line per drink, or per option when the drink has options. */
-const LINES: { key: string; drink: Drink; option?: DrinkOption }[] = DRINKS.flatMap((d) => (d.options
-  ? d.options.map((o) => ({ key: `${d.id}:${o.id}`, drink: d, option: o }))
-  : [{ key: d.id, drink: d }]));
-
-const inputIdFor = (key: string) => `qty-${key.replace(':', '-')}`;
-const emptyQuantities = () => Object.fromEntries(LINES.map((l) => [l.key, 0])) as Record<string, number>;
+const inputIdFor = (id: string) => `qty-${id}`;
+const emptyQuantities = () => Object.fromEntries(DRINKS.map((d) => [d.id, 0])) as Record<string, number>;
 
 const headerLabel = <Bi en="Visitor registration" zh="訪客登記" />;
 const skipLinkLabel = <Bi en="Skip to main content" zh="跳至主要內容" />;
@@ -40,12 +33,11 @@ interface StepperProps {
   labelledBy?: string;
   describedBy?: string;
   invalid: boolean;
-  small?: boolean;
 }
 
-function Stepper({ inputId, value, onChange, name, labelledBy, describedBy, invalid, small }: StepperProps) {
+function Stepper({ inputId, value, onChange, name, labelledBy, describedBy, invalid }: StepperProps) {
   return (
-    <div className={small ? 'stepper stepper--small' : 'stepper'} role="group" aria-label={`${name.en} ${name.zh} quantity 數量`}>
+    <div className="stepper" role="group" aria-label={`${name.en} ${name.zh} quantity 數量`}>
       <button
         type="button"
         className="stepper__btn"
@@ -91,7 +83,7 @@ export function TeaOrderPage() {
   const currentMinutes = previewMinutes ?? minutesOfDay(now);
   // A ?time= preview always applies the hours, so the closed page can be shown whatever the demo switch says.
   const applyHours = previewMinutes !== null || enforceTeaHours;
-  const serviceOpen = !applyHours || (currentMinutes >= TEA_SERVICE_HOURS.start && currentMinutes < TEA_SERVICE_HOURS.end);
+  const serviceOpen = !applyHours || isTeaServiceOpen(currentMinutes);
 
   const [quantities, setQuantities] = useState<Record<string, number>>(emptyQuantities);
   const [note, setNote] = useState('');
@@ -126,15 +118,12 @@ export function TeaOrderPage() {
   };
 
   const totalItems = Object.values(quantities).reduce((a, b) => a + b, 0);
-  const describedBy = (descId: string, hasDesc: boolean) => {
-    const ids = [hasDesc ? descId : '', errors.length ? 'drinks-error' : ''].filter(Boolean);
-    return ids.join(' ') || undefined;
-  };
+  const describedBy = (descId: string) => [descId, errors.length ? 'drinks-error' : ''].filter(Boolean).join(' ');
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (totalItems === 0) {
-      const first = inputIdFor(LINES[0].key);
+      const first = inputIdFor(DRINKS[0].id);
       setErrors([{ id: first, message: <Bi en="Choose at least one drink." zh="請最少選擇一款飲品。" /> }]);
       document.getElementById(first)?.focus();
       return;
@@ -142,12 +131,12 @@ export function TeaOrderPage() {
     submitTeaOrder({
       roomId: room.id,
       roomName: room.name,
-      lines: LINES.filter((l) => quantities[l.key] > 0).map((l) => ({
-        drinkId: l.drink.id,
-        drinkName: l.drink.name,
-        optionId: l.option?.id,
-        optionName: l.option?.name,
-        quantity: quantities[l.key],
+      lines: DRINKS.filter((d) => quantities[d.id] > 0).map((d) => ({
+        drinkId: d.id,
+        drinkName: d.name,
+        unit: d.unit,
+        menuNote: d.note || undefined,
+        quantity: quantities[d.id],
       })),
       note: note.trim() || undefined,
     });
@@ -173,7 +162,7 @@ export function TeaOrderPage() {
           stack
         />
       ) : (
-        <Bi en={`Tea service hours ${serviceStart} - ${serviceEnd}`} zh={`茶水服務時間 ${serviceStart} 至 ${serviceEnd}`} stack />
+        <Bi en={`Tea service hours ${TEA_SERVICE_HOURS_EN}`} zh={`茶水服務時間 ${TEA_SERVICE_HOURS_ZH}`} stack />
       )}
       documentTitle={`${room.name} ${room.nameZh}`}
       headerLabel={headerLabel}
@@ -226,72 +215,54 @@ export function TeaOrderPage() {
             <p id="drinks-hint" className="field__hint">
               <Bi en="Set a quantity for each drink you want." zh="請為所需飲品設定數量。" />
             </p>
-            <ul className="drink-grid">
-              {DRINKS.map((d) => {
-                const drinkTotal = LINES.filter((l) => l.drink.id === d.id).reduce((sum, l) => sum + quantities[l.key], 0);
-                const nameId = `drink-name-${d.id}`;
-                const descId = `drink-desc-${d.id}`;
-                const hasDesc = Boolean(d.description || d.descriptionZh);
-                const singleInputId = inputIdFor(d.id);
-                return (
-                  <li key={d.id} className={`drink-card${drinkTotal > 0 ? ' drink-card--selected' : ''}`}>
-                    <div className="drink-card__media">
-                      <img src={d.image} alt="" width={480} height={360} loading="lazy" />
-                      {drinkTotal > 0 && <span className="drink-card__badge" aria-hidden="true">{drinkTotal}</span>}
-                    </div>
-                    <div className="drink-card__body">
-                      {d.options ? (
-                        <p className="drink-card__name" id={nameId}><Bi en={d.name} zh={d.nameZh} stack /></p>
-                      ) : (
-                        <label htmlFor={singleInputId} className="drink-card__name" id={nameId}>
-                          <Bi en={d.name} zh={d.nameZh} stack />
-                        </label>
-                      )}
-                      {hasDesc && (
-                        <span className="drink-card__desc" id={descId}>
-                          <Bi en={d.description} zh={d.descriptionZh} stack />
-                        </span>
-                      )}
-                      {d.options ? (
-                        <ul className="drink-options" aria-labelledby={nameId}>
-                          {d.options.map((o) => {
-                            const key = `${d.id}:${o.id}`;
-                            const inputId = inputIdFor(key);
-                            const optionLabelId = `${inputId}-label`;
-                            return (
-                              <li key={o.id} className={`drink-option${quantities[key] > 0 ? ' drink-option--selected' : ''}`}>
-                                <label htmlFor={inputId} id={optionLabelId} className="drink-option__label">
-                                  <Bi en={o.name} zh={o.nameZh} />
-                                </label>
-                                <Stepper
-                                  small
-                                  inputId={inputId}
-                                  value={quantities[key]}
-                                  onChange={(v) => setQty(key, v)}
-                                  name={{ en: `${d.name}, ${o.name}`, zh: `${d.nameZh}，${o.nameZh}` }}
-                                  labelledBy={`${nameId} ${optionLabelId}`}
-                                  describedBy={describedBy(descId, hasDesc)}
-                                  invalid={errors.length > 0}
-                                />
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : (
-                        <Stepper
-                          inputId={singleInputId}
-                          value={quantities[d.id]}
-                          onChange={(v) => setQty(d.id, v)}
-                          name={{ en: d.name, zh: d.nameZh }}
-                          describedBy={describedBy(descId, hasDesc)}
-                          invalid={errors.length > 0}
-                        />
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            {DRINK_CATEGORIES.map((cat) => {
+              const headingId = `drink-category-${cat.id}`;
+              const drinks = DRINKS.filter((d) => d.categoryId === cat.id);
+              return (
+                <section key={cat.id} className="drink-category" aria-labelledby={headingId}>
+                  <h2 id={headingId} className="drink-category__title">
+                    <Bi en={`${cat.code}) ${cat.name}`} zh={cat.nameZh} />
+                  </h2>
+                  <ul className="drink-grid">
+                    {drinks.map((d) => {
+                      const qty = quantities[d.id] ?? 0;
+                      const nameId = `drink-name-${d.id}`;
+                      const descId = `drink-desc-${d.id}`;
+                      const inputId = inputIdFor(d.id);
+                      const stepperName = {
+                        en: d.note ? `${d.name}, ${d.unit}, ${d.note}` : `${d.name}, ${d.unit}`,
+                        zh: d.note ? `${d.nameZh}，${d.unitZh}，${d.noteZh}` : `${d.nameZh}，${d.unitZh}`,
+                      };
+                      return (
+                        <li key={d.id} className={`drink-card${qty > 0 ? ' drink-card--selected' : ''}`}>
+                          <div className="drink-card__media">
+                            <img src={d.image} alt="" width={480} height={360} loading="lazy" />
+                            {qty > 0 && <span className="drink-card__badge" aria-hidden="true">{qty}</span>}
+                          </div>
+                          <div className="drink-card__body">
+                            <label htmlFor={inputId} className="drink-card__name" id={nameId}>
+                              <Bi en={d.name} zh={d.nameZh} stack />
+                            </label>
+                            <span className="drink-card__desc" id={descId}>
+                              <span className="drink-card__unit"><Bi en={d.unit} zh={d.unitZh} /></span>
+                              {d.note ? <span className="drink-card__note"><Bi en={d.note} zh={d.noteZh} /></span> : null}
+                            </span>
+                            <Stepper
+                              inputId={inputId}
+                              value={qty}
+                              onChange={(v) => setQty(d.id, v)}
+                              name={stepperName}
+                              describedBy={describedBy(descId)}
+                              invalid={errors.length > 0}
+                            />
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              );
+            })}
             {errors.length > 0 && (
               <p id="drinks-error" className="field__error">
                 <span className="sr-only">Error: </span>

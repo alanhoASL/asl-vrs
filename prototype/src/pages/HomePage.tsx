@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { ACCOUNTS, ROOMS, TEA_SERVICE_HOURS } from '../data/catalog';
+import { ACCOUNTS, ROOMS, TEA_SERVICE_HOURS_EN } from '../data/catalog';
 import { resetDemoData } from '../data/store';
-import { minutesToTime } from '../lib/date';
 
 const FORMS = [
   { to: '/register/guest', theme: 'prereg', eyebrow: 'Guest', title: 'Pre-registration', text: 'QR sent to the guest before the visit.' },
@@ -90,7 +89,7 @@ export function HomePage() {
             ))}
           </ul>
           <p className="hub__note">
-            Tea service hours ({minutesToTime(TEA_SERVICE_HOURS.start)} to {minutesToTime(TEA_SERVICE_HOURS.end)}) are off by
+            Tea service hours ({TEA_SERVICE_HOURS_EN}) are off by
             default for demos; switch them on in the portal&apos;s Demo tools menu.{' '}
             <Link to={`/tea/${ROOMS[0].id}?time=17:00`} id="hub-tea-closed-preview">Preview the closed page</Link>
             {' '}(adds <code>?time=17:00</code> to the address).

@@ -206,7 +206,7 @@ export function VisitDrawer({ registration, open, onClose }: Props) {
             </h2>
             <LabelPreview registration={registration} visitor={printTarget} />
             <p id="print-dialog-desc" className="notice">
-              No printer is connected in this prototype. Selecting Print records the action in the audit log only.
+              No printer is connected in this prototype. Print records the action in the audit log only. A connected printer would output the inner label only, 34 mm × 65 mm.
             </p>
             <div className="modal-actions">
               <button type="button" className="btn btn-outline" onClick={() => setPrintTargetId(null)} id="print-cancel">

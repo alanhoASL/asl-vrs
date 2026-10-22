@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { setDemoSettings, useDemoSettings } from '../data/demoSettings';
 import { simulateRegistration, simulateTeaOrder } from '../data/simulate';
-import { TEA_SERVICE_HOURS } from '../data/catalog';
-import { minutesToTime } from '../lib/date';
+import { TEA_SERVICE_HOURS_EN } from '../data/catalog';
 
 /** Prototype-only floating menu for live demos: fakes incoming tea orders and registrations. */
 export function DemoMenu() {
@@ -42,7 +41,7 @@ export function DemoMenu() {
   useEffect(() => cancelClose, []);
 
   const run = (action: () => string) => setStatus(`Sent: ${action()}`);
-  const teaHours = `${minutesToTime(TEA_SERVICE_HOURS.start)} - ${minutesToTime(TEA_SERVICE_HOURS.end)}`;
+  const teaHours = TEA_SERVICE_HOURS_EN;
 
   return (
     <div

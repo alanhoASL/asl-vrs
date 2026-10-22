@@ -488,78 +488,140 @@
   }
 }
 
-/* Label preview */
+/* Combined badge preview. Shell is 90 mm × 63 mm; the printed label is 34 mm × 65 mm. */
 .label-figure {
   margin: 0;
+  display: grid;
+  gap: 8px;
+  justify-items: start;
 }
 
-/* Greyscale only: the label printer cannot print colour. */
-.badge-label {
-  border: 1.5px solid #8c8c8c;
-  border-radius: 8px;
-  overflow: hidden;
+.label-figure__caption {
+  max-width: 460px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.badge-shell {
+  container-type: inline-size;
+  position: relative;
+  width: min(100%, 460px);
+  aspect-ratio: 90 / 63;
   background: #fff;
-  color: #000;
+  border: 1.5px solid #172c51;
+  overflow: hidden;
 }
 
-.badge-label__head {
+.badge-shell--visitor {
+  --badge-band: #4472c4;
+}
+
+.badge-shell--contractor {
+  --badge-band: #ffff00;
+}
+
+.badge-shell__bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: calc(14.4 / 63 * 100%);
+  background: var(--badge-band);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
-  background: #e3e3e3;
-  color: #000;
-  border-bottom: 1px solid #8c8c8c;
+  justify-content: center;
 }
 
-.badge-label__type {
-  font-size: 17px;
-  font-weight: 800;
+.badge-shell__slot {
+  width: calc(16 / 90 * 100%);
+  height: 24%;
+  border: 1.5px solid #172c51;
+  border-radius: 3px;
+  background: #fff;
 }
 
-.badge-label__site {
-  font-weight: 800;
-  font-size: 18px;
-}
-
-.badge-label__body {
-  padding: 18px 20px 20px;
+.badge-label {
+  position: absolute;
+  top: calc(16.5 / 63 * 100%);
+  left: calc(12.5 / 90 * 100%);
+  width: calc(65 / 90 * 100%);
+  height: calc(34 / 63 * 100%);
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(100cqw * 4.2 / 90);
+  overflow: hidden;
+  color: #1a3148;
 }
 
 .badge-label__name {
-  font-size: 28px;
-  font-weight: 800;
-  line-height: 1.15;
+  font-size: calc(100cqw * 4.4 / 90);
+  font-weight: 700;
+  line-height: 1.05;
+  color: #10233f;
 }
 
 .badge-label__company {
-  margin-top: 4px;
-  font-size: 16px;
-  font-weight: 500;
+  margin-top: calc(100cqw * 0.6 / 90);
+  font-size: calc(100cqw * 2.5 / 90);
+  line-height: 1.15;
+  color: #78859a;
 }
 
 .badge-label__rows {
-  margin: 14px 0 0;
-  padding-top: 12px;
-  border-top: 1px solid #a6a6a6;
+  margin: calc(100cqw * 2.2 / 90) 0 0;
+  padding-top: calc(100cqw * 1.2 / 90);
+  border-top: 1px solid #e1e5ea;
   display: grid;
-  gap: 6px;
+  gap: calc(100cqw * 0.45 / 90);
 }
 
 .badge-label__rows > div {
   display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 12px;
-  font-size: 14px;
+  grid-template-columns: 34% 1fr;
+  column-gap: calc(100cqw * 1.5 / 90);
+  font-size: calc(100cqw * 2.15 / 90);
+  line-height: 1.15;
 }
 
 .badge-label__rows dt {
-  font-weight: 400;
+  font-weight: 500;
+  color: #848b99;
 }
 
 .badge-label__rows dd {
   margin: 0;
   font-weight: 700;
+  color: #3a3d44;
+  overflow-wrap: anywhere;
+}
+
+.badge-shell__brand {
+  position: absolute;
+  right: calc(3.2 / 90 * 100%);
+  bottom: calc(2.4 / 63 * 100%);
+  left: calc(3.2 / 90 * 100%);
+  height: calc(8.5 / 63 * 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(100cqw * 2 / 90);
+}
+
+.badge-shell__logo {
+  height: 100%;
+  width: auto;
+  display: block;
+}
+
+.badge-shell__role {
+  margin: 0;
+  font-size: calc(100cqw * 5.4 / 90);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #111;
+  white-space: nowrap;
 }
 
 /* Notifications */

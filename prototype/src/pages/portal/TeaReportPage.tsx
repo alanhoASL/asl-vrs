@@ -128,7 +128,7 @@ export function TeaReportPage() {
               <dt>Most ordered drink</dt>
               <dd>
                 {topDrink
-                  ? `${topDrink.drinkName}${topDrink.optionName ? ` (${topDrink.optionName})` : ''} x ${topDrink.quantity}`
+                  ? `${topDrink.drinkName}${topDrink.unit ? ` (${topDrink.unit})` : ''} x ${topDrink.quantity}`
                   : '-'}
               </dd>
             </div>
@@ -172,7 +172,7 @@ export function TeaReportPage() {
                   <thead>
                     <tr>
                       <th scope="col">Drink</th>
-                      <th scope="col">Option</th>
+                      <th scope="col">Unit</th>
                       <th scope="col" className="num">Quantity</th>
                       <th scope="col" className="num">Orders</th>
                       <th scope="col"><span className="sr-only">Share of quantity</span></th>
@@ -180,9 +180,9 @@ export function TeaReportPage() {
                   </thead>
                   <tbody>
                     {summary.byDrink.map((d) => (
-                      <tr key={`${d.drinkName}|${d.optionName}`}>
+                      <tr key={d.drinkName}>
                         <td data-label="Drink">{d.drinkName}</td>
-                        <td data-label="Option">{d.optionName || <span className="muted">-</span>}</td>
+                        <td data-label="Unit">{d.unit || <span className="muted">-</span>}</td>
                         <td data-label="Quantity" className="num">{d.quantity}</td>
                         <td data-label="Orders" className="num">{d.orders}</td>
                         <td className="bar-cell" aria-hidden="true">
@@ -197,7 +197,7 @@ export function TeaReportPage() {
           </div>
 
           <p className="field__hint report-footnote">
-            The Excel file has four sheets: every order line (date, time, room, drink, option, quantity, note), plus totals by
+            The Excel file has four sheets: every order line (date, time, room, drink, unit, quantity, note), plus totals by
             room, by drink and by day.
           </p>
         </>

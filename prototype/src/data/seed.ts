@@ -1,11 +1,11 @@
-﻿import { ACCOUNTS, DRINKS, OFFICE_HOURS, ROOMS, TEA_SERVICE_HOURS } from './catalog';
+﻿import { ACCOUNTS, DRINKS, OFFICE_HOURS, ROOMS, teaServiceSlots } from './catalog';
 import { addDays, startOfDay } from '../lib/date';
 import type {
   AppNotification, AppState, AuditEntry, Registration, RegistrationType, TeaLine, TeaOrder, Visitor, VisitorStatus,
 } from './types';
 import { describeRegistration, describeTeaOrder, registrationTitle } from './describe';
 
-export const STATE_VERSION = 1;
+export const STATE_VERSION = 3;
 
 export const VISITOR_NAMES = [
   'Alex Lee', 'Karen Lau', 'Michael Cheung', 'Ivy Ho', 'Kelvin Ng', 'Grace Tse', 'Raymond Yip', 'Cindy Leung',
@@ -199,14 +199,14 @@ export function createSeedState(now: Date = new Date()): AppState {
   }
 
   const teaOrders: TeaOrder[] = [];
+  const slots = teaServiceSlots();
   let teaCounter = 0;
   for (let offset = -14; offset <= 0; offset += 1) {
     const day = addDays(today, offset);
     if (day.getDay() === 0 || day.getDay() === 6) continue;
     const count = between(0, 4);
     for (let i = 0; i < count; i += 1) {
-      const latestSlot = (TEA_SERVICE_HOURS.end - TEA_SERVICE_HOURS.start) / 15 - 1;
-      const createdAt = new Date(day.getTime() + (TEA_SERVICE_HOURS.start + between(0, latestSlot) * 15) * 60000);
+      const createdAt = new Date(day.getTime() + pick(slots) * 60000);
       if (createdAt > now) continue;
       const room = pick(ROOMS);
       const lineCount = between(1, 3);
@@ -214,12 +214,14 @@ export function createSeedState(now: Date = new Date()): AppState {
       const lines: TeaLine[] = [];
       for (let l = 0; l < lineCount; l += 1) {
         const drink = pick(DRINKS);
-        const option = drink.options ? pick(drink.options) : undefined;
-        const key = `${drink.id}:${option?.id ?? ''}`;
-        if (chosen.has(key)) continue;
-        chosen.add(key);
+        if (chosen.has(drink.id)) continue;
+        chosen.add(drink.id);
         lines.push({
-          drinkId: drink.id, drinkName: drink.name, optionId: option?.id, optionName: option?.name, quantity: between(1, 6),
+          drinkId: drink.id,
+          drinkName: drink.name,
+          unit: drink.unit,
+          menuNote: drink.note || undefined,
+          quantity: between(1, 6),
         });
       }
       teaCounter += 1;

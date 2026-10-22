@@ -42,8 +42,10 @@ export interface Registration {
 export interface TeaLine {
   drinkId: string;
   drinkName: string;
-  optionId?: string;
-  optionName?: string;
+  /** Menu unit, in English: glass or mug. */
+  unit: string;
+  /** Standing menu note, e.g. "Sugar on the side". */
+  menuNote?: string;
   quantity: number;
 }
 

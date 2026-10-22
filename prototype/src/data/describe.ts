@@ -24,9 +24,10 @@ export function describeRegistration(r: Registration): string {
   return parts.join(' · ');
 }
 
-/** "Coffee (With milk)" */
+/** "Hot Coffee (mug, Sugar on the side)" */
 export function teaLineName(l: TeaLine): string {
-  return l.optionName ? `${l.drinkName} (${l.optionName})` : l.drinkName;
+  const detail = [l.unit, l.menuNote].filter(Boolean).join(', ');
+  return detail ? `${l.drinkName} (${detail})` : l.drinkName;
 }
 
 export function describeTeaOrder(o: TeaOrder): string {

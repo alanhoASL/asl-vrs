@@ -37,7 +37,7 @@ export function TeaPopups() {
             <h2 id={titleId} className="popup__title">{order.roomName}</h2>
             <ul className="popup__lines">
               {order.lines.map((l) => (
-                <li key={`${l.drinkId}-${l.optionId ?? ''}`}>
+                <li key={l.drinkId}>
                   <span className="popup__qty">{`${l.quantity} x`}</span> {teaLineName(l)}
                 </li>
               ))}

@@ -55,11 +55,15 @@ export function simulateTeaOrder(): string {
   const lineCount = between(1, 3);
   while (lines.length < lineCount) {
     const drink = pick(DRINKS);
-    const option = drink.options ? pick(drink.options) : undefined;
-    const key = `${drink.id}:${option?.id ?? ''}`;
-    if (used.has(key)) continue;
-    used.add(key);
-    lines.push({ drinkId: drink.id, drinkName: drink.name, optionId: option?.id, optionName: option?.name, quantity: between(1, 4) });
+    if (used.has(drink.id)) continue;
+    used.add(drink.id);
+    lines.push({
+      drinkId: drink.id,
+      drinkName: drink.name,
+      unit: drink.unit,
+      menuNote: drink.note || undefined,
+      quantity: between(1, 4),
+    });
   }
   submitTeaOrder({
     roomId: room.id,

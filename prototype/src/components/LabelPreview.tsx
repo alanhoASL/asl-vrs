@@ -1,21 +1,20 @@
-import { SITE_NAME } from '../data/catalog';
 import type { Registration, Visitor } from '../data/types';
 import { formatDate } from '../lib/date';
 
-/** Label layout from the design preview. Physical size depends on the printer, which is not chosen yet. */
+/**
+ * Combined badge: a pre-printed colour shell (90 mm × 63 mm) with the
+ * printed label (34 mm × 65 mm) in place. The printer outputs only the label.
+ */
 export function LabelPreview({ registration, visitor }: { registration: Registration; visitor: Visitor }) {
   const isVendor = registration.type === 'vendor';
+  const role = isVendor ? 'CONTRACTOR' : 'VISITOR';
   return (
-    <figure className="label-figure" aria-labelledby="label-caption">
-      <figcaption id="label-caption" className="sr-only">
-        {`Label preview for ${visitor.name}`}
-      </figcaption>
-      <div className="badge-label">
-        <div className="badge-label__head">
-          <span className="badge-label__type">{isVendor ? 'Vendor' : 'Guest'}</span>
-          <span className="badge-label__site">{SITE_NAME}</span>
+    <figure className="label-figure" id="label-preview" aria-labelledby="label-caption">
+      <div className={`badge-shell badge-shell--${isVendor ? 'contractor' : 'visitor'}`}>
+        <div className="badge-shell__bar" aria-hidden="true">
+          <span className="badge-shell__slot" />
         </div>
-        <div className="badge-label__body">
+        <div className="badge-label">
           <p className="badge-label__name">{visitor.name}</p>
           <p className="badge-label__company">{registration.company}</p>
           <dl className="badge-label__rows">
@@ -41,7 +40,20 @@ export function LabelPreview({ registration, visitor }: { registration: Registra
             </div>
           </dl>
         </div>
+        <div className="badge-shell__brand">
+          <img
+            className="badge-shell__logo"
+            src={`${import.meta.env.BASE_URL}badge/asl-logo.png`}
+            alt="ASL"
+            width={1132}
+            height={455}
+          />
+          <p className="badge-shell__role">{role}</p>
+        </div>
       </div>
+      <figcaption id="label-caption" className="label-figure__caption">
+        Combined badge. Only the inner label (34 mm × 65 mm) is printed. The coloured band, ASL logo and role are pre-printed.
+      </figcaption>
     </figure>
   );
 }

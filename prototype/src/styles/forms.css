@@ -308,6 +308,16 @@
 }
 
 /* Tea order */
+.drink-category {
+  margin-top: 14px;
+}
+
+.drink-category__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .drink-grid {
   list-style: none;
   margin: 10px 0 0;
@@ -380,9 +390,16 @@
 
 .drink-card__desc {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: 12px;
   line-height: 1.35;
   color: var(--text-muted);
+}
+
+.drink-card__note {
+  font-style: italic;
 }
 
 .drink-card .stepper {
@@ -399,29 +416,6 @@
   flex: 1;
   width: auto;
   min-width: 0;
-}
-
-.drink-options {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.drink-option__label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.drink-option .stepper {
-  margin-top: 3px;
-}
-
-.stepper--small .stepper__btn,
-.stepper--small .stepper__input {
-  height: 34px;
 }
 
 .stepper {

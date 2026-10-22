@@ -10,7 +10,7 @@ export interface RoomRow {
 
 export interface DrinkRow {
   drinkName: string;
-  optionName: string;
+  unit: string;
   quantity: number;
   orders: number;
 }
@@ -46,12 +46,10 @@ const itemCount = (o: TeaOrder) => o.lines.reduce((sum, l) => sum + l.quantity, 
 export function summarize(orders: TeaOrder[]): TeaSummary {
   // Start from the full room list and menu so unused rooms and drinks show as zero.
   const rooms = new Map<string, RoomRow>(ROOMS.map((r) => [r.name, { roomName: r.name, orders: 0, items: 0 }]));
-  const drinks = new Map<string, DrinkRow>();
-  for (const d of DRINKS) {
-    for (const o of d.options ?? [undefined]) {
-      drinks.set(`${d.name}|${o?.name ?? ''}`, { drinkName: d.name, optionName: o?.name ?? '', quantity: 0, orders: 0 });
-    }
-  }
+  const menuIndex = new Map(DRINKS.map((d, i) => [d.id, i]));
+  const drinks = new Map<string, DrinkRow>(
+    DRINKS.map((d) => [d.id, { drinkName: d.name, unit: d.unit, quantity: 0, orders: 0 }]),
+  );
   const days = new Map<string, DayRow>();
 
   for (const order of orders) {
@@ -61,11 +59,10 @@ export function summarize(orders: TeaOrder[]): TeaSummary {
     rooms.set(order.roomName, room);
 
     for (const line of order.lines) {
-      const key = `${line.drinkName}|${line.optionName ?? ''}`;
-      const row = drinks.get(key) ?? { drinkName: line.drinkName, optionName: line.optionName ?? '', quantity: 0, orders: 0 };
+      const row = drinks.get(line.drinkId) ?? { drinkName: line.drinkName, unit: line.unit, quantity: 0, orders: 0 };
       row.quantity += line.quantity;
       row.orders += 1;
-      drinks.set(key, row);
+      drinks.set(line.drinkId, row);
     }
 
     const dayKey = toDayKey(new Date(order.createdAt));
@@ -79,7 +76,7 @@ export function summarize(orders: TeaOrder[]): TeaSummary {
     totalOrders: orders.length,
     totalItems: orders.reduce((sum, o) => sum + itemCount(o), 0),
     byRoom: [...rooms.values()].sort((a, b) => b.orders - a.orders || b.items - a.items || a.roomName.localeCompare(b.roomName)),
-    byDrink: [...drinks.values()].sort((a, b) => b.quantity - a.quantity || a.drinkName.localeCompare(b.drinkName)),
+    byDrink: [...drinks.entries()].sort((a, b) => b[1].quantity - a[1].quantity || (menuIndex.get(a[0]) ?? 999) - (menuIndex.get(b[0]) ?? 999)).map(([, row]) => row),
     byDay: [...days.values()].sort((a, b) => a.date.localeCompare(b.date)),
   };
 }
@@ -92,13 +89,13 @@ export async function downloadTeaReport(orders: TeaOrder[], from: Date, to: Date
 
   const rawRows = orders.flatMap((o) => o.lines.map((l) => {
     const created = new Date(o.createdAt);
-    return [o.id, toDayKey(created), formatTime(created), o.roomName, l.drinkName, l.optionName ?? '', l.quantity, o.note ?? ''];
+    return [o.id, toDayKey(created), formatTime(created), o.roomName, l.drinkName, l.unit, l.quantity, o.note ?? ''];
   }));
 
   await writeXlsxFile([
     {
       sheet: 'Order lines',
-      data: [header(['Order ID', 'Date', 'Time', 'Room', 'Drink', 'Option', 'Quantity', 'Note']), ...rawRows],
+      data: [header(['Order ID', 'Date', 'Time', 'Room', 'Drink', 'Unit', 'Quantity', 'Note']), ...rawRows],
       columns: [{ width: 22 }, { width: 12 }, { width: 8 }, { width: 22 }, { width: 24 }, { width: 12 }, { width: 10 }, { width: 40 }],
       stickyRowsCount: 1,
     },
@@ -110,7 +107,7 @@ export async function downloadTeaReport(orders: TeaOrder[], from: Date, to: Date
     },
     {
       sheet: 'By drink',
-      data: [header(['Drink', 'Option', 'Quantity', 'Orders']), ...summary.byDrink.map((d) => [d.drinkName, d.optionName, d.quantity, d.orders])],
+      data: [header(['Drink', 'Unit', 'Quantity', 'Orders']), ...summary.byDrink.map((d) => [d.drinkName, d.unit, d.quantity, d.orders])],
       columns: [{ width: 24 }, { width: 12 }, { width: 10 }, { width: 10 }],
       stickyRowsCount: 1,
     },
