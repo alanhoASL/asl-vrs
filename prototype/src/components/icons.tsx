@@ -20,6 +20,15 @@ function Icon({ children, size = 18 }: { children: ReactNode; size?: number }) {
   );
 }
 
+export const VisitorsIcon = () => (
+  <Icon>
+    <circle cx="9" cy="8" r="2.6" />
+    <path d="M4.5 19v-1.2A3.3 3.3 0 0 1 7.8 14.5h2.4a3.3 3.3 0 0 1 3.3 3.3V19" />
+    <circle cx="17" cy="8.5" r="2.2" />
+    <path d="M16.2 14.6a3.2 3.2 0 0 1 3.3 3.2V19" />
+  </Icon>
+);
+
 export const CalendarIcon = () => (
   <Icon>
     <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
@@ -33,10 +42,9 @@ export const ReportIcon = () => (
   </Icon>
 );
 
-export const AuditIcon = () => (
+export const WordingIcon = () => (
   <Icon>
-    <path d="M9 5h11M9 12h11M9 19h11" />
-    <path d="M4 5h.01M4 12h.01M4 19h.01" strokeWidth="2.6" />
+    <path d="M5 6h14M5 12h14M5 18h9" />
   </Icon>
 );
 

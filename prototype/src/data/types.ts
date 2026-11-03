@@ -29,6 +29,8 @@ export interface Registration {
   type: RegistrationType;
   company: string;
   hostStaff: string;
+  /** Phone number of the host, as entered on the public form. */
+  hostContact: string;
   /** Planned time for pre-registration, submission time for ad hoc and vendor. ISO string. */
   visitAt: string;
   submittedAt: string;

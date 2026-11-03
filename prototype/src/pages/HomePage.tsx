@@ -33,7 +33,7 @@ export function HomePage() {
           <h2 id="hub-portal-title" className="hub__section-title">Staff portal</h2>
           <div className="hub-card hub-card--portal">
             <div>
-              <p className="hub-card__text">Calendar of registrations, visit details, confirm, dismiss and label preview.</p>
+              <p className="hub-card__text">Calendar of registrations, a visitor list for batch confirm, dismiss and label preview, and visit details.</p>
               <table className="demo-accounts" aria-label="Demo accounts">
                 <thead>
                   <tr>
@@ -100,7 +100,7 @@ export function HomePage() {
           <h2 id="hub-reset-title" className="hub__section-title">Demo data</h2>
           <div className="hub-card hub-card--portal">
             <p className="hub-card__text">
-              Rebuild the dummy registrations, tea orders, notifications and audit log around today&apos;s date. Anything
+              Rebuild the dummy registrations, tea orders and notifications around today&apos;s date. Anything
               submitted in this browser is removed.
             </p>
             <button

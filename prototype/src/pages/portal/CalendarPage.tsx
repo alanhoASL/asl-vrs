@@ -25,7 +25,7 @@ const STATUS_ORDER: VisitorStatus[] = ['expected', 'confirmed', 'printed', 'dism
 function matchesQuery(r: Registration, q: string): boolean {
   if (!q) return true;
   const needle = q.toLowerCase();
-  return [r.company, r.hostStaff, r.purpose ?? '', ...r.visitors.map((v) => v.name)]
+  return [r.company, r.hostStaff, r.hostContact ?? '', r.purpose ?? '', ...r.visitors.map((v) => v.name)]
     .some((text) => text.toLowerCase().includes(needle));
 }
 
@@ -192,13 +192,13 @@ export function CalendarPage() {
           ))}
         </fieldset>
         <div className="calendar-search">
-          <label htmlFor="calendar-search" className="sr-only">Search by visitor, company or host</label>
+          <label htmlFor="calendar-search" className="sr-only">Search by visitor, company, host or phone</label>
           <span className="calendar-search__icon"><SearchIcon /></span>
           <input
             id="calendar-search"
             type="search"
             className="input input--small"
-            placeholder="Search visitor, company or host"
+            placeholder="Search visitor, company, host or phone"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />

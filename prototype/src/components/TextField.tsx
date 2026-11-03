@@ -9,7 +9,7 @@ interface Props {
   hint?: ReactNode;
   error?: ReactNode;
   placeholder?: string;
-  type?: 'text' | 'password' | 'datetime-local' | 'search';
+  type?: 'text' | 'password' | 'datetime-local' | 'search' | 'tel';
   readOnly?: boolean;
   maxLength?: number;
   min?: string;

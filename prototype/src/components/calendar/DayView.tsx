@@ -98,7 +98,7 @@ function DayCard({ registration: r, onOpen }: { registration: Registration; onOp
         </button>
       </h3>
       <p className="day-card__meta">
-        <span>Host <strong>{r.hostStaff}</strong></span>
+        <span>Host <strong>{r.hostStaff}</strong>{r.hostContact ? ` · ${r.hostContact}` : ''}</span>
         {r.purpose && <span>Work <strong>{r.purpose}</strong></span>}
         {r.floor && <span>Floor <strong>{r.floor}</strong></span>}
       </p>

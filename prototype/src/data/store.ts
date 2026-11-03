@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { createSeedState, STATE_VERSION } from './seed';
 import { describeRegistration, describeTeaOrder, registrationTitle } from './describe';
+import { canConfirm, canDismiss, canPrint } from './visitorRules';
 import type {
   Account, AppNotification, AppState, AuditAction, Registration, RegistrationType, TeaLine, TeaOrder, Visitor,
 } from './types';
@@ -60,6 +61,7 @@ export interface RegistrationInput {
   type: RegistrationType;
   company: string;
   hostStaff: string;
+  hostContact: string;
   /** Only used for pre-registration; ad hoc and vendor use the submission time. */
   plannedAt?: Date;
   purpose?: string;
@@ -75,6 +77,7 @@ export function submitRegistration(input: RegistrationInput) {
     type: input.type,
     company: input.company,
     hostStaff: input.hostStaff,
+    hostContact: input.hostContact,
     visitAt: visitAt.toISOString(),
     submittedAt: now.toISOString(),
     visitors: input.visitors.map<Visitor>((v) => ({
@@ -148,57 +151,103 @@ export function recordSession(account: Account, action: 'Sign in' | 'Sign out') 
   commit((s) => appendAudit(s, account, action));
 }
 
-function updateVisitor(
-  registrationId: string,
-  visitorId: string,
+export interface VisitorTarget {
+  registrationId: string;
+  visitorId: string;
+}
+
+/** Applies one action to many visitors in a single save. Returns the names it actually changed, in target order. */
+function applyToVisitors(
+  targets: VisitorTarget[],
   account: Account,
   change: (v: Visitor) => { visitor: Visitor; action: AuditAction } | null,
-) {
+): string[] {
+  if (targets.length === 0) return [];
+  const wanted = new Set(targets.map((t) => `${t.registrationId}\n${t.visitorId}`));
+  const nameByKey = new Map<string, string>();
+  for (const r of state.registrations) {
+    for (const v of r.visitors) nameByKey.set(`${r.id}\n${v.id}`, v.name);
+  }
+  const applied = new Set<string>();
   commit((s) => {
-    let auditAction: AuditAction | null = null;
-    let visitorName = '';
-    const registrations = s.registrations.map((r) => {
-      if (r.id !== registrationId) return r;
-      return {
-        ...r,
-        visitors: r.visitors.map((v) => {
-          if (v.id !== visitorId) return v;
-          const result = change(v);
-          if (!result) return v;
-          auditAction = result.action;
-          visitorName = v.name;
-          return result.visitor;
-        }),
-      };
-    });
-    if (!auditAction) return s;
-    return appendAudit({ ...s, registrations }, account, auditAction, { registrationId, visitorId, detail: visitorName });
+    applied.clear();
+    const audits: { registrationId: string; visitorId: string; action: AuditAction; detail: string }[] = [];
+    const registrations = s.registrations.map((r) => ({
+      ...r,
+      visitors: r.visitors.map((v) => {
+        const key = `${r.id}\n${v.id}`;
+        if (!wanted.has(key)) return v;
+        const result = change(v);
+        if (!result) return v;
+        applied.add(key);
+        audits.push({ registrationId: r.id, visitorId: v.id, action: result.action, detail: v.name });
+        return result.visitor;
+      }),
+    }));
+    if (audits.length === 0) return s;
+    let next: AppState = { ...s, registrations };
+    for (const entry of audits) {
+      next = appendAudit(next, account, entry.action, {
+        registrationId: entry.registrationId,
+        visitorId: entry.visitorId,
+        detail: entry.detail,
+      });
+    }
+    return next;
+  });
+  return targets
+    .map((t) => `${t.registrationId}\n${t.visitorId}`)
+    .filter((key) => applied.has(key))
+    .map((key) => nameByKey.get(key) ?? 'Visitor');
+}
+
+export function confirmVisitors(targets: VisitorTarget[], account: Account): string[] {
+  const now = new Date().toISOString();
+  return applyToVisitors(targets, account, (v) => {
+    if (!canConfirm(v)) return null;
+    const printed = v.status === 'printed' || v.printCount > 0;
+    return {
+      action: 'Confirm',
+      visitor: {
+        ...v,
+        status: printed ? 'printed' : 'confirmed',
+        confirmedBy: account.displayName,
+        confirmedAt: now,
+      },
+    };
   });
 }
 
 export function confirmVisitor(registrationId: string, visitorId: string, account: Account) {
-  updateVisitor(registrationId, visitorId, account, (v) => (v.status !== 'expected' ? null : {
-    action: 'Confirm',
-    visitor: { ...v, status: 'confirmed', confirmedBy: account.displayName, confirmedAt: new Date().toISOString() },
-  }));
+  confirmVisitors([{ registrationId, visitorId }], account);
+}
+
+export function dismissVisitors(targets: VisitorTarget[], account: Account): string[] {
+  return applyToVisitors(targets, account, (v) => (canDismiss(v) ? {
+    action: 'Dismiss',
+    visitor: { ...v, status: 'dismissed' },
+  } : null));
 }
 
 export function dismissVisitor(registrationId: string, visitorId: string, account: Account) {
-  updateVisitor(registrationId, visitorId, account, (v) => (v.status !== 'expected' ? null : {
-    action: 'Dismiss',
-    visitor: { ...v, status: 'dismissed' },
-  }));
+  dismissVisitors([{ registrationId, visitorId }], account);
 }
 
-/** No printer is connected in the prototype; this only records the print. */
-export function printVisitorLabel(registrationId: string, visitorId: string, account: Account) {
-  updateVisitor(registrationId, visitorId, account, (v) => {
-    if (v.status !== 'confirmed' && v.status !== 'printed') return null;
+/** No printer is connected in the prototype; this only records the print. Confirm is not required. */
+export function printVisitorLabels(targets: VisitorTarget[], account: Account): string[] {
+  const now = new Date().toISOString();
+  return applyToVisitors(targets, account, (v) => {
+    if (!canPrint(v)) return null;
+    const reprint = v.printCount > 0;
     return {
-      action: v.printCount > 0 ? 'Reprint label' : 'Print label',
-      visitor: { ...v, status: 'printed', printCount: v.printCount + 1, lastPrintedAt: new Date().toISOString() },
+      action: reprint ? 'Reprint label' : 'Print label',
+      visitor: { ...v, status: 'printed', printCount: v.printCount + 1, lastPrintedAt: now },
     };
   });
+}
+
+export function printVisitorLabel(registrationId: string, visitorId: string, account: Account) {
+  printVisitorLabels([{ registrationId, visitorId }], account);
 }
 
 export function markNotificationRead(id: string, accountId: string) {

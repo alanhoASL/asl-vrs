@@ -86,7 +86,6 @@ export function TeaOrderPage() {
   const serviceOpen = !applyHours || isTeaServiceOpen(currentMinutes);
 
   const [quantities, setQuantities] = useState<Record<string, number>>(emptyQuantities);
-  const [note, setNote] = useState('');
   const [errors, setErrors] = useState<FieldError[]>([]);
   const [sent, setSent] = useState(false);
   const sentHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -138,14 +137,12 @@ export function TeaOrderPage() {
         menuNote: d.note || undefined,
         quantity: quantities[d.id],
       })),
-      note: note.trim() || undefined,
     });
     setSent(true);
   };
 
   const reset = () => {
     setQuantities(emptyQuantities());
-    setNote('');
     setErrors([]);
     setSent(false);
   };
@@ -237,6 +234,23 @@ export function TeaOrderPage() {
                         <li key={d.id} className={`drink-card${qty > 0 ? ' drink-card--selected' : ''}`}>
                           <div className="drink-card__media">
                             <img src={d.image} alt="" width={480} height={360} loading="lazy" />
+                            {d.id === 'warm-water' && (
+                              <span className="drink-card__mark drink-card__mark--warm" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                                  <path d="M7 20c1.6-1.4 1.6-2.6 0-4s-1.6-2.6 0-4 1.6-2.6 0-4 1.6-2.6 0-4" />
+                                  <path d="M12 20c1.6-1.4 1.6-2.6 0-4s-1.6-2.6 0-4 1.6-2.6 0-4 1.6-2.6 0-4" />
+                                  <path d="M17 20c1.6-1.4 1.6-2.6 0-4s-1.6-2.6 0-4 1.6-2.6 0-4 1.6-2.6 0-4" />
+                                </svg>
+                              </span>
+                            )}
+                            {d.id === 'cold-water' && (
+                              <span className="drink-card__mark drink-card__mark--cold" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M12 2.5v19M3.2 7.2l17.6 9.6M20.8 7.2L3.2 16.8" />
+                                  <path d="M12 6.2L9.8 4.2M12 6.2l2.2-2M12 17.8l-2.2 2M12 17.8l2.2 2M7.4 9.4L5 7.8M7.4 9.4l.4-2.8M16.6 14.6l2.4 1.6M16.6 14.6l-.4 2.8M16.6 9.4l2.4-1.6M16.6 9.4l-.4-2.8M7.4 14.6L5 16.2M7.4 14.6l.4 2.8" />
+                                </svg>
+                              </span>
+                            )}
                             {qty > 0 && <span className="drink-card__badge" aria-hidden="true">{qty}</span>}
                           </div>
                           <div className="drink-card__body">
@@ -270,27 +284,6 @@ export function TeaOrderPage() {
               </p>
             )}
           </fieldset>
-
-          <div className="field">
-            <div className="field__label-row">
-              <label htmlFor="tea-note" className="field__label">
-                <Bi en="Note (optional)" zh="備註（選填）" />
-              </label>
-            </div>
-            <textarea
-              id="tea-note"
-              className="input textarea"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. less sugar 例如：少甜"
-              maxLength={200}
-              rows={3}
-              aria-describedby="tea-note-hint"
-            />
-            <p id="tea-note-hint" className="field__hint">
-              <Bi en="Up to 200 characters." zh="最多200字。" />
-            </p>
-          </div>
 
           <button type="submit" className="btn btn-primary btn-block btn-submit" id="send-tea-order">
             {totalItems > 0

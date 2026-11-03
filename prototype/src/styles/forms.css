@@ -48,6 +48,13 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* Category mark in the top corner of a registration form. */
+.public-page:not(.theme-tea) .eyebrow__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
 .form-card__title {
   margin-top: 6px;
   font-size: 22px;
@@ -356,10 +363,32 @@
   object-fit: cover;
 }
 
-.drink-card__badge {
+.drink-card__mark {
   position: absolute;
   top: 8px;
   right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drink-card__mark--warm {
+  color: #d92d20;
+}
+
+.drink-card__mark--cold {
+  color: #2b6cb0;
+}
+
+.drink-card__badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
   min-width: 28px;
   height: 28px;
   padding: 0 8px;

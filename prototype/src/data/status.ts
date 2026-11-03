@@ -8,7 +8,7 @@ export type OverallState = 'pending' | 'done' | 'dismissed';
 /** pending: someone still to be checked; done: everyone handled; dismissed: every row dismissed. */
 export function overallState(r: Registration): OverallState {
   if (r.visitors.every((v) => v.status === 'dismissed')) return 'dismissed';
-  if (r.visitors.some((v) => v.status === 'expected')) return 'pending';
+  if (r.visitors.some((v) => v.status !== 'dismissed' && !v.confirmedAt)) return 'pending';
   return 'done';
 }
 

@@ -3,9 +3,10 @@ import { addDays, startOfDay } from '../lib/date';
 import type {
   AppNotification, AppState, AuditEntry, Registration, RegistrationType, TeaLine, TeaOrder, Visitor, VisitorStatus,
 } from './types';
+import { DEFAULT_PURPOSES } from './formCopy';
 import { describeRegistration, describeTeaOrder, registrationTitle } from './describe';
 
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 
 export const VISITOR_NAMES = [
   'Alex Lee', 'Karen Lau', 'Michael Cheung', 'Ivy Ho', 'Kelvin Ng', 'Grace Tse', 'Raymond Yip', 'Cindy Leung',
@@ -24,10 +25,7 @@ export const VENDOR_COMPANIES = [
   'Harbour Engineering Ltd', 'Dragon Fire Safety', 'Metro Network Cabling', 'Green Pest Control',
 ];
 
-export const VENDOR_WORK = [
-  'Air-conditioning maintenance', 'Lift inspection', 'Network cabling', 'Fire safety check', 'Pest control',
-  'Plumbing repair', 'Window cleaning', 'Printer servicing', 'Electrical inspection',
-];
+export const VENDOR_WORK = DEFAULT_PURPOSES.map((item) => item.en);
 
 export const HOSTS = ['Jamie Chan', 'Daniel Lam', 'Fiona Yeung', 'Henry Choi', 'Queenie Mak', 'Oscar Wong', 'Stella Ip'];
 export const FLOORS = ['12/F', '15/F', '8/F', 'G/F', '20/F', '3/F'];
@@ -57,6 +55,12 @@ export function createSeedState(now: Date = new Date()): AppState {
   const rand = mulberry32(20261016);
   const pick = <T,>(list: T[]): T => list[Math.floor(rand() * list.length)];
   const between = (min: number, max: number) => min + Math.floor(rand() * (max - min + 1));
+  const hostPhone = () => {
+    const first = rand() < 0.75 ? between(5, 9) : between(2, 3);
+    const rest = String(between(0, 9999999)).padStart(7, '0');
+    const digits = `${first}${rest}`;
+    return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+  };
   const notAfterNow = (d: Date) => new Date(Math.min(d.getTime(), now.getTime()));
 
   const reception = ACCOUNTS[0];
@@ -149,6 +153,7 @@ export function createSeedState(now: Date = new Date()): AppState {
       type,
       company: type === 'vendor' ? pick(VENDOR_COMPANIES) : pick(GUEST_COMPANIES),
       hostStaff: pick(HOSTS),
+      hostContact: hostPhone(),
       visitAt: visitAt.toISOString(),
       submittedAt: submittedAt.toISOString(),
       visitors,

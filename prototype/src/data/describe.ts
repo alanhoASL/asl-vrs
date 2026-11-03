@@ -20,7 +20,7 @@ export function describeRegistration(r: Registration): string {
   const parts = [r.company, visitorCountText(r.visitors.length)];
   if (r.type === 'vendor' && r.purpose) parts.push(r.purpose);
   if (r.type === 'guest-prereg') parts.push(`visit ${formatDateTime(new Date(r.visitAt))}`);
-  parts.push(`host ${r.hostStaff}`);
+  parts.push(`host ${r.hostStaff}${r.hostContact ? ` ${r.hostContact}` : ''}`);
   return parts.join(' · ');
 }
 

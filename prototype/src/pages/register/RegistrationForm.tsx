@@ -4,6 +4,7 @@ import { TextField } from '../../components/TextField';
 import { ErrorSummary, type FieldError } from '../../components/ErrorSummary';
 import { Bi } from '../../components/Bi';
 import { MAX_VISITORS, OFFICE_HOURS } from '../../data/catalog';
+import { useFormSubtitles, usePurposeOptions } from '../../data/formCopy';
 import { submitRegistration } from '../../data/store';
 import type { RegistrationType } from '../../data/types';
 import { formatDateTime, minutesOfDay, minutesToTime, toDateTimeLocalValue } from '../../lib/date';
@@ -18,14 +19,12 @@ const VARIANTS: Record<RegistrationType, {
   theme: 'prereg' | 'adhoc' | 'vendor';
   eyebrow: Text;
   title: Text;
-  subtitle: Text;
   successText: Text;
 }> = {
   'guest-prereg': {
     theme: 'prereg',
     eyebrow: { en: 'Guest', zh: '訪客' },
     title: { en: 'Pre-registration', zh: '預先登記' },
-    subtitle: { en: 'Plan your visit before arriving.', zh: '請於到訪前預先登記。' },
     successText: {
       en: 'Your visit has been registered.',
       zh: '您的到訪已登記。',
@@ -35,7 +34,6 @@ const VARIANTS: Record<RegistrationType, {
     theme: 'adhoc',
     eyebrow: { en: 'Guest', zh: '訪客' },
     title: { en: 'Ad hoc registration', zh: '即場登記' },
-    subtitle: { en: 'Register when you arrive at reception.', zh: '抵達接待處時登記。' },
     successText: {
       en: 'Your registration has been sent. Please show your identification to reception staff.',
       zh: '您的登記已提交。請向接待處職員出示身份證明文件。',
@@ -45,7 +43,6 @@ const VARIANTS: Record<RegistrationType, {
     theme: 'vendor',
     eyebrow: { en: 'Vendor / Contractor', zh: '供應商 / 承辦商' },
     title: { en: 'On site registration', zh: '現場登記' },
-    subtitle: { en: 'Reception will complete the visit details.', zh: '接待處職員將補充到訪資料。' },
     successText: {
       en: 'Your registration has been sent. Please show your identification to reception staff.',
       zh: '您的登記已提交。請向接待處職員出示身份證明文件。',
@@ -71,6 +68,8 @@ const officeEnd = minutesToTime(OFFICE_HOURS.end);
 
 export function RegistrationForm({ variant }: { variant: RegistrationType }) {
   const config = VARIANTS[variant];
+  const subtitle = useFormSubtitles()[variant];
+  const purposes = usePurposeOptions();
   const isPrereg = variant === 'guest-prereg';
   const isVendor = variant === 'vendor';
   const now = useNow(15000);
@@ -78,6 +77,7 @@ export function RegistrationForm({ variant }: { variant: RegistrationType }) {
   const [company, setCompany] = useState('');
   const [plannedAt, setPlannedAt] = useState('');
   const [hostStaff, setHostStaff] = useState('');
+  const [hostContact, setHostContact] = useState('');
   const [purpose, setPurpose] = useState('');
   const [floor, setFloor] = useState('');
   const [visitors, setVisitors] = useState<VisitorRow[]>(() => [newRow()]);
@@ -137,8 +137,15 @@ export function RegistrationForm({ variant }: { variant: RegistrationType }) {
     if (!hostStaff.trim()) {
       list.push({ id: 'host-staff', message: <Bi en="Enter the name of the staff member you are visiting." zh="請輸入受訪職員姓名。" /> });
     }
-    if (isVendor && !purpose.trim()) {
-      list.push({ id: 'purpose', message: <Bi en="Enter a brief description of the work." zh="請簡述工作內容。" /> });
+    const contact = hostContact.trim();
+    const contactDigits = contact.replace(/\D/g, '');
+    if (!contact) {
+      list.push({ id: 'host-contact', message: <Bi en="Enter the host staff contact number." zh="請輸入受訪職員聯絡電話。" /> });
+    } else if (!/^[0-9+\-()\s]+$/.test(contact) || contactDigits.length < 8 || contactDigits.length > 15) {
+      list.push({ id: 'host-contact', message: <Bi en="Enter a contact number of 8 to 15 digits." zh="請輸入8至15位數字的聯絡電話。" /> });
+    }
+    if (isVendor && !purposes.some((item) => item.id === purpose)) {
+      list.push({ id: 'purpose', message: <Bi en="Select the purpose of the work." zh="請選擇到訪目的。" /> });
     }
     visitors.forEach((v, i) => {
       const n = pad2(i + 1);
@@ -174,8 +181,9 @@ export function RegistrationForm({ variant }: { variant: RegistrationType }) {
       type: variant,
       company: company.trim(),
       hostStaff: hostStaff.trim(),
+      hostContact: hostContact.trim(),
       plannedAt: isPrereg ? new Date(plannedAt) : undefined,
-      purpose: isVendor ? purpose.trim() : undefined,
+      purpose: isVendor ? purposes.find((item) => item.id === purpose)?.en : undefined,
       floor: isVendor ? floor.trim() || undefined : undefined,
       visitors: visitors.map((v) => ({
         name: v.name.trim(),
@@ -211,7 +219,7 @@ export function RegistrationForm({ variant }: { variant: RegistrationType }) {
       theme={config.theme}
       eyebrow={<Bi en={config.eyebrow.en} zh={config.eyebrow.zh} />}
       title={<Bi en={config.title.en} zh={config.title.zh} stack />}
-      subtitle={<Bi en={config.subtitle.en} zh={config.subtitle.zh} stack />}
+      subtitle={<Bi en={subtitle.en} zh={subtitle.zh} stack />}
       documentTitle={`${config.title.en} ${config.title.zh}`}
       headerLabel={<Bi en="Visitor registration" zh="訪客登記" />}
       skipLinkLabel={<Bi en="Skip to main content" zh="跳至主要內容" />}
@@ -295,18 +303,52 @@ export function RegistrationForm({ variant }: { variant: RegistrationType }) {
             error={errorFor('host-staff')}
           />
 
+          <TextField
+            id="host-contact"
+            label={<Bi en="Host staff contact number" zh="受訪職員聯絡電話" />}
+            type="tel"
+            required
+            value={hostContact}
+            onChange={(v) => { setHostContact(v); clearError('host-contact'); }}
+            placeholder="e.g. 9123 4567 例如 9123 4567"
+            autoComplete="tel"
+            inputMode="tel"
+            maxLength={20}
+            error={errorFor('host-contact')}
+          />
+
           {isVendor && (
             <>
-              <TextField
-                id="purpose"
-                label={<Bi en="Purpose / work" zh="到訪目的 / 工作內容" />}
-                required
-                value={purpose}
-                onChange={(v) => { setPurpose(v); clearError('purpose'); }}
-                placeholder="Brief work description 簡述工作內容"
-                maxLength={120}
-                error={errorFor('purpose')}
-              />
+              <div className={`field${errorFor('purpose') ? ' field--invalid' : ''}`}>
+                <div className="field__label-row">
+                  <label htmlFor="purpose" className="field__label">
+                    <Bi en="Purpose / work" zh="到訪目的 / 工作內容" />
+                    <span className="req" aria-hidden="true">*</span>
+                    <span className="sr-only"> (required)</span>
+                  </label>
+                </div>
+                <select
+                  id="purpose"
+                  className="input"
+                  value={purpose}
+                  required
+                  aria-required="true"
+                  aria-invalid={errorFor('purpose') ? true : undefined}
+                  aria-describedby={errorFor('purpose') ? 'purpose-error' : undefined}
+                  onChange={(event) => { setPurpose(event.target.value); clearError('purpose'); }}
+                >
+                  <option value="">Select the work 請選擇工作</option>
+                  {purposes.map((item) => (
+                    <option key={item.id} value={item.id}>{`${item.en} ${item.zh}`}</option>
+                  ))}
+                </select>
+                {errorFor('purpose') && (
+                  <p id="purpose-error" className="field__error">
+                    <span className="sr-only">Error: </span>
+                    {errorFor('purpose')}
+                  </p>
+                )}
+              </div>
               <TextField
                 id="floor"
                 label={<Bi en="Destination floor" zh="前往樓層" />}

@@ -1,5 +1,6 @@
 import { DRINKS, OFFICE_HOURS, ROOMS } from './catalog';
-import { FLOORS, GUEST_COMPANIES, HOSTS, VENDOR_COMPANIES, VENDOR_WORK, VISITOR_NAMES } from './seed';
+import { purposeEnglishLabels } from './formCopy';
+import { FLOORS, GUEST_COMPANIES, HOSTS, VENDOR_COMPANIES, VISITOR_NAMES } from './seed';
 import { submitRegistration, submitTeaOrder } from './store';
 import type { RegistrationType, TeaLine } from './types';
 import { addDays, formatDateTime, minutesOfDay, startOfDay } from '../lib/date';
@@ -8,6 +9,13 @@ import { addDays, formatDateTime, minutesOfDay, startOfDay } from '../lib/date';
 
 const pick = <T,>(list: T[]): T => list[Math.floor(Math.random() * list.length)];
 const between = (min: number, max: number) => min + Math.floor(Math.random() * (max - min + 1));
+
+function hostPhone(): string {
+  const first = Math.random() < 0.75 ? between(5, 9) : between(2, 3);
+  const rest = String(between(0, 9999999)).padStart(7, '0');
+  const digits = `${first}${rest}`;
+  return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+}
 
 function pickNames(count: number): string[] {
   const names = new Set<string>();
@@ -35,8 +43,9 @@ export function simulateRegistration(type: RegistrationType): string {
     type,
     company,
     hostStaff: pick(HOSTS),
+    hostContact: hostPhone(),
     plannedAt,
-    purpose: isVendor ? pick(VENDOR_WORK) : undefined,
+    purpose: isVendor ? pick(purposeEnglishLabels()) : undefined,
     floor: isVendor && Math.random() < 0.7 ? pick(FLOORS) : undefined,
     visitors: names.map((name) => ({
       name,

@@ -4,8 +4,9 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { PortalLayout } from './pages/portal/PortalLayout';
 import { CalendarPage } from './pages/portal/CalendarPage';
-import { AuditLogPage } from './pages/portal/AuditLogPage';
+import { VisitorsPage } from './pages/portal/VisitorsPage';
 import { TeaReportPage } from './pages/portal/TeaReportPage';
+import { FormWordingPage } from './pages/portal/FormWordingPage';
 import { RegistrationForm } from './pages/register/RegistrationForm';
 import { TeaOrderPage } from './pages/tea/TeaOrderPage';
 
@@ -24,10 +25,18 @@ export function App() {
       >
         <Route index element={<CalendarPage />} />
         <Route
-          path="audit"
+          path="visitors"
           element={(
             <RequireAuth role="superadmin">
-              <AuditLogPage />
+              <VisitorsPage />
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="form-wording"
+          element={(
+            <RequireAuth role="superadmin">
+              <FormWordingPage />
             </RequireAuth>
           )}
         />

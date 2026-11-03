@@ -3,7 +3,7 @@ import { useAccount, useAuth } from '../../auth/AuthContext';
 import { NotificationBell } from '../../components/NotificationBell';
 import { TeaPopups } from '../../components/TeaPopups';
 import { DemoMenu } from '../../components/DemoMenu';
-import { AuditIcon, CalendarIcon, ReportIcon, SignOutIcon } from '../../components/icons';
+import { CalendarIcon, ReportIcon, SignOutIcon, VisitorsIcon, WordingIcon } from '../../components/icons';
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
@@ -30,13 +30,17 @@ export function PortalLayout() {
             </NavLink>
             {account.role === 'superadmin' && (
               <>
+                <NavLink to="/portal/visitors" className="portal-nav__link" id="nav-visitors">
+                  <VisitorsIcon />
+                  <span>Visitors</span>
+                </NavLink>
+                <NavLink to="/portal/form-wording" className="portal-nav__link" id="nav-form-wording">
+                  <WordingIcon />
+                  <span>Form wording</span>
+                </NavLink>
                 <NavLink to="/portal/tea-report" className="portal-nav__link" id="nav-tea-report">
                   <ReportIcon />
                   <span>Tea report</span>
-                </NavLink>
-                <NavLink to="/portal/audit" className="portal-nav__link" id="nav-audit">
-                  <AuditIcon />
-                  <span>Audit log</span>
                 </NavLink>
               </>
             )}

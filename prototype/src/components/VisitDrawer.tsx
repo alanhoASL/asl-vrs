@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal } from './Modal';
-import { LabelPreview } from './LabelPreview';
+import { DismissVisitorsDialog, PrintLabelsDialog, type DismissRequest, type PrintRequest } from './VisitorActionDialogs';
 import { useAccount } from '../auth/AuthContext';
 import { STATUS_LABELS, TYPE_LABELS } from '../data/catalog';
-import { confirmVisitor, dismissVisitor, printVisitorLabel } from '../data/store';
+import { confirmVisitor, confirmVisitors, dismissVisitors, printVisitorLabels } from '../data/store';
+import { canConfirm, canDismiss, canPrint } from '../data/visitorRules';
 import type { Registration, Visitor } from '../data/types';
 import { formatDateTime } from '../lib/date';
 
@@ -17,20 +18,56 @@ interface Props {
 
 export function VisitDrawer({ registration, open, onClose }: Props) {
   const account = useAccount();
-  const [printTargetId, setPrintTargetId] = useState<string | null>(null);
-  const [dismissTargetId, setDismissTargetId] = useState<string | null>(null);
+  const [printItems, setPrintItems] = useState<PrintRequest[]>([]);
+  const [dismissItems, setDismissItems] = useState<DismissRequest[]>([]);
+  const [dismissSkipped, setDismissSkipped] = useState(0);
   const [announcement, setAnnouncement] = useState('');
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
-  // Confirm and Dismiss remove the button that had focus, so move focus to the next useful control.
+  const visitors = registration?.visitors ?? [];
+  const selectable = visitors.filter((v) => v.status !== 'dismissed');
+  const selectedVisitors = selectable.filter((v) => selected.has(v.id));
+  const confirmable = selectedVisitors.filter(canConfirm);
+  const dismissable = selectedVisitors.filter(canDismiss);
+  const printable = selectedVisitors.filter(canPrint);
+  const allSelected = selectable.length > 0 && selectable.every((v) => selected.has(v.id));
+  const allowedKey = selectable.map((v) => v.id).join('|');
+
   useEffect(() => {
     if (!focusId) return;
     document.getElementById(focusId)?.focus();
     setFocusId(null);
   }, [focusId, registration]);
 
-  const printTarget = registration?.visitors.find((v) => v.id === printTargetId) ?? null;
-  const dismissTarget = registration?.visitors.find((v) => v.id === dismissTargetId) ?? null;
+  useEffect(() => {
+    const allow = new Set(allowedKey ? allowedKey.split('|') : []);
+    setSelected((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((id) => {
+        if (allow.has(id)) next.add(id);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [allowedKey]);
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = selectedVisitors.length > 0 && !allSelected;
+    }
+  }, [selectedVisitors.length, allSelected]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const handleConfirm = (v: Visitor) => {
     if (!registration) return;
@@ -39,23 +76,55 @@ export function VisitDrawer({ registration, open, onClose }: Props) {
     setFocusId(`print-${v.id}`);
   };
 
+  const handleBatchConfirm = () => {
+    if (!registration || confirmable.length === 0) return;
+    const names = confirmVisitors(
+      confirmable.map((v) => ({ registrationId: registration.id, visitorId: v.id })),
+      account,
+    );
+    setAnnouncement(names.length === 1 ? `${names[0]} confirmed.` : `Confirmed ${names.length} visitors: ${names.join(', ')}.`);
+    setFocusId(printable.length > 0 ? 'drawer-batch-print' : 'drawer-select-all');
+  };
+
+  const openDismiss = (items: DismissRequest[], skipped: number) => {
+    setDismissItems(items);
+    setDismissSkipped(skipped);
+  };
+
   const handleDismiss = () => {
-    if (!registration || !dismissTarget) return;
-    dismissVisitor(registration.id, dismissTarget.id, account);
-    setAnnouncement(`${dismissTarget.name} dismissed.`);
-    setDismissTargetId(null);
-    setFocusId('close-visit-drawer');
+    if (!registration || dismissItems.length === 0) return;
+    const names = dismissVisitors(
+      dismissItems.map((item) => ({ registrationId: item.registrationId, visitorId: item.id })),
+      account,
+    );
+    setAnnouncement(names.length === 1 ? `${names[0]} dismissed.` : `Dismissed ${names.length} visitors: ${names.join(', ')}.`);
+    const dismissedIds = new Set(dismissItems.map((item) => item.id));
+    setSelected((prev) => {
+      const next = new Set([...prev].filter((id) => !dismissedIds.has(id)));
+      return next;
+    });
+    setDismissItems([]);
+    setDismissSkipped(0);
+    const remaining = visitors.some((v) => v.status !== 'dismissed' && !dismissedIds.has(v.id));
+    setFocusId(remaining ? 'drawer-select-all' : 'close-visit-drawer');
   };
 
   const handlePrint = () => {
-    if (!registration || !printTarget) return;
-    const reprint = printTarget.printCount > 0;
-    printVisitorLabel(registration.id, printTarget.id, account);
-    setAnnouncement(`${reprint ? 'Reprint' : 'Print'} recorded for ${printTarget.name}.`);
-    setPrintTargetId(null);
+    if (printItems.length === 0) return;
+    const names = printVisitorLabels(
+      printItems.map((item) => ({ registrationId: item.registration.id, visitorId: item.visitor.id })),
+      account,
+    );
+    const reprint = printItems.every((item) => item.visitor.printCount > 0);
+    const verb = reprint ? 'Reprint' : 'Print';
+    setAnnouncement(names.length === 1
+      ? `${verb} recorded for ${names[0]}.`
+      : `${verb} recorded for ${names.length} visitors: ${names.join(', ')}.`);
+    setPrintItems([]);
   };
 
   const isVendor = registration?.type === 'vendor';
+  const printBatchLabel = printable.length > 0 && printable.every((v) => v.printCount > 0) ? 'Reprint label' : 'Print label';
 
   return (
     <>
@@ -91,6 +160,12 @@ export function VisitDrawer({ registration, open, onClose }: Props) {
                 <dt>Host staff</dt>
                 <dd>{registration.hostStaff}</dd>
               </div>
+              {registration.hostContact && (
+                <div>
+                  <dt>Host contact</dt>
+                  <dd>{registration.hostContact}</dd>
+                </div>
+              )}
               {isVendor && (
                 <>
                   <div>
@@ -113,39 +188,104 @@ export function VisitDrawer({ registration, open, onClose }: Props) {
               <h3 id="visitors-heading" className="drawer__section-title">
                 Visitors ({registration.visitors.length})
               </h3>
-              <ul className="visitor-list">
-                {registration.visitors.map((v) => {
-                  const printHintId = `print-hint-${v.id}`;
-                  return (
-                    <li key={v.id} className={`visitor-card status-${v.status}`}>
-                      <div className="visitor-card__top">
-                        <div className="visitor-card__who">
-                          <span className="visitor-card__avatar" aria-hidden="true">{initials(v.name)}</span>
-                          <div>
-                            <p id={`visitor-name-${v.id}`} className="visitor-card__name">{v.name}</p>
-                            {v.idFirst4 && (
-                              <p className="visitor-card__meta">
-                                HKID / staff card first 4: <strong>{v.idFirst4}</strong>
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <span className={`status-pill status-pill--${v.status}`}>{STATUS_LABELS[v.status]}</span>
-                      </div>
-
-                      {(v.confirmedAt || v.lastPrintedAt) && (
-                        <p className="visitor-card__meta">
-                          {v.confirmedAt && `Confirmed by ${v.confirmedBy} at ${formatDateTime(new Date(v.confirmedAt))}.`}
-                          {v.lastPrintedAt && ` Label printed ${v.printCount === 1 ? 'once' : `${v.printCount} times`}, last at ${formatDateTime(new Date(v.lastPrintedAt))}.`}
-                        </p>
+              {selectable.length > 0 && (
+                <div className="batch-bar" role="group" aria-label="Batch actions for this visit">
+                  <div className="batch-bar__select">
+                    <input
+                      ref={selectAllRef}
+                      id="drawer-select-all"
+                      className="check"
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={() => {
+                        setSelected(allSelected ? new Set() : new Set(selectable.map((v) => v.id)));
+                      }}
+                    />
+                    <label htmlFor="drawer-select-all">Select all</label>
+                  </div>
+                  <div className="batch-bar__actions">
+                    <span className="batch-bar__count">{`${selectedVisitors.length} selected`}</span>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-small"
+                      id="drawer-batch-confirm"
+                      disabled={confirmable.length === 0}
+                      onClick={handleBatchConfirm}
+                    >
+                      {confirmable.length > 0 ? `Confirm (${confirmable.length})` : 'Confirm'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      id="drawer-batch-dismiss"
+                      disabled={dismissable.length === 0}
+                      onClick={() => openDismiss(
+                        dismissable.map((v) => ({ id: v.id, registrationId: registration.id, name: v.name })),
+                        selectedVisitors.length - dismissable.length,
                       )}
+                    >
+                      {dismissable.length > 0 ? `Dismiss (${dismissable.length})` : 'Dismiss'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-soft btn-small"
+                      id="drawer-batch-print"
+                      disabled={printable.length === 0}
+                      onClick={() => setPrintItems(printable.map((v) => ({ registration, visitor: v })))}
+                    >
+                      {printable.length > 0 ? `${printBatchLabel} (${printable.length})` : 'Print label'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              <ul className="visitor-list">
+                {registration.visitors.map((v) => (
+                  <li key={v.id} className={`visitor-card status-${v.status}`}>
+                    <div className="visitor-card__layout">
+                      <div className="visitor-card__check">
+                        <input
+                          type="checkbox"
+                          className="check"
+                          checked={selected.has(v.id)}
+                          disabled={v.status === 'dismissed'}
+                          onChange={() => toggle(v.id)}
+                          aria-label={`Select ${v.name}`}
+                          id={`select-${v.id}`}
+                        />
+                      </div>
+                      <div className="visitor-card__body">
+                        <div className="visitor-card__top">
+                          <div className="visitor-card__who">
+                            <span className="visitor-card__avatar" aria-hidden="true">{initials(v.name)}</span>
+                            <div>
+                              <p id={`visitor-name-${v.id}`} className="visitor-card__name">{v.name}</p>
+                              {v.idFirst4 && (
+                                <p className="visitor-card__meta">
+                                  HKID / staff card first 4: <strong>{v.idFirst4}</strong>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <span className={`status-pill status-pill--${v.status}`}>{STATUS_LABELS[v.status]}</span>
+                        </div>
 
-                      {v.status === 'dismissed' ? (
-                        <p className="visitor-card__meta">Dismissed as a duplicate or mistaken entry. No label.</p>
-                      ) : (
-                        <div className="visitor-card__actions">
-                          {v.status === 'expected' && (
-                            <>
+                        {v.status !== 'dismissed' && (v.confirmedAt || v.lastPrintedAt) && (
+                          <p className="visitor-card__meta">
+                            {v.confirmedAt && `Confirmed by ${v.confirmedBy} at ${formatDateTime(new Date(v.confirmedAt))}. `}
+                            {!v.confirmedAt && v.lastPrintedAt && 'Not confirmed yet. '}
+                            {v.lastPrintedAt && `Label printed ${v.printCount === 1 ? 'once' : `${v.printCount} times`}, last at ${formatDateTime(new Date(v.lastPrintedAt))}.`}
+                          </p>
+                        )}
+
+                        {v.status === 'dismissed' ? (
+                          <p className="visitor-card__meta">
+                            {v.printCount > 0
+                              ? `Dismissed as a duplicate or mistaken entry. A label was printed ${v.printCount === 1 ? 'once' : `${v.printCount} times`} before dismissal.`
+                              : 'Dismissed as a duplicate or mistaken entry. No label.'}
+                          </p>
+                        ) : (
+                          <div className="visitor-card__actions">
+                            {canConfirm(v) && (
                               <button
                                 type="button"
                                 className="btn btn-primary btn-small"
@@ -155,36 +295,33 @@ export function VisitDrawer({ registration, open, onClose }: Props) {
                               >
                                 Confirm
                               </button>
+                            )}
+                            {canDismiss(v) && (
                               <button
                                 type="button"
                                 className="btn btn-outline btn-small"
-                                onClick={() => setDismissTargetId(v.id)}
+                                onClick={() => openDismiss([{ id: v.id, registrationId: registration.id, name: v.name }], 0)}
                                 id={`dismiss-${v.id}`}
                                 aria-label={`Dismiss ${v.name}`}
                               >
                                 Dismiss
                               </button>
-                            </>
-                          )}
-                          <button
-                            type="button"
-                            className="btn btn-soft btn-small"
-                            onClick={() => setPrintTargetId(v.id)}
-                            disabled={v.status === 'expected'}
-                            aria-describedby={v.status === 'expected' ? printHintId : undefined}
-                            id={`print-${v.id}`}
-                            aria-label={`${v.printCount > 0 ? 'Reprint label' : 'Print label'} for ${v.name}`}
-                          >
-                            {v.printCount > 0 ? 'Reprint label' : 'Print label'}
-                          </button>
-                          {v.status === 'expected' && (
-                            <p id={printHintId} className="visitor-card__hint">Confirm this visitor before printing a label.</p>
-                          )}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
+                            )}
+                            <button
+                              type="button"
+                              className="btn btn-soft btn-small"
+                              onClick={() => setPrintItems([{ registration, visitor: v }])}
+                              id={`print-${v.id}`}
+                              aria-label={`${v.printCount > 0 ? 'Reprint label' : 'Print label'} for ${v.name}`}
+                            >
+                              {v.printCount > 0 ? 'Reprint label' : 'Print label'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
               </ul>
             </section>
             <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
@@ -192,58 +329,13 @@ export function VisitDrawer({ registration, open, onClose }: Props) {
         )}
       </Modal>
 
-      <Modal
-        open={!!printTarget && !!registration}
-        onClose={() => setPrintTargetId(null)}
-        labelledBy="print-dialog-title"
-        describedBy="print-dialog-desc"
-        id="print-dialog"
-      >
-        {printTarget && registration && (
-          <div className="modal-body">
-            <h2 id="print-dialog-title" className="modal-title">
-              {printTarget.printCount > 0 ? 'Reprint label' : 'Print label'}
-            </h2>
-            <LabelPreview registration={registration} visitor={printTarget} />
-            <p id="print-dialog-desc" className="notice">
-              No printer is connected in this prototype. Print records the action in the audit log only. A connected printer would output the inner label only, 34 mm × 65 mm.
-            </p>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setPrintTargetId(null)} id="print-cancel">
-                Cancel
-              </button>
-              <button type="button" className="btn btn-primary" onClick={handlePrint} id="print-confirm">
-                {printTarget.printCount > 0 ? 'Reprint' : 'Print'}
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        open={!!dismissTarget}
-        onClose={() => setDismissTargetId(null)}
-        labelledBy="dismiss-dialog-title"
-        describedBy="dismiss-dialog-desc"
-        id="dismiss-dialog"
-      >
-        {dismissTarget && (
-          <div className="modal-body">
-            <h2 id="dismiss-dialog-title" className="modal-title">{`Dismiss ${dismissTarget.name}?`}</h2>
-            <p id="dismiss-dialog-desc">
-              Use this for a duplicate or mistaken entry. It does not turn the person away, and it cannot be undone.
-            </p>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-outline" onClick={() => setDismissTargetId(null)} id="dismiss-cancel">
-                Cancel
-              </button>
-              <button type="button" className="btn btn-danger" onClick={handleDismiss} id="dismiss-confirm">
-                Dismiss
-              </button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <PrintLabelsDialog items={printItems} onClose={() => setPrintItems([])} onConfirm={handlePrint} />
+      <DismissVisitorsDialog
+        items={dismissItems}
+        skipped={dismissSkipped}
+        onClose={() => { setDismissItems([]); setDismissSkipped(0); }}
+        onConfirm={handleDismiss}
+      />
     </>
   );
 }
