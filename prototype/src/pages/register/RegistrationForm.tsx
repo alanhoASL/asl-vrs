@@ -42,7 +42,7 @@ const VARIANTS: Record<RegistrationType, {
   vendor: {
     theme: 'vendor',
     eyebrow: { en: 'Vendor / Contractor', zh: '供應商 / 承辦商' },
-    title: { en: 'On site registration', zh: '現場登記' },
+    title: { en: 'On-Site Registration', zh: '現場登記' },
     successText: {
       en: 'Your registration has been sent. Please show your identification to reception staff for verification.',
       zh: '您的登記已提交。請向接待處職員出示身份證明文件以供核對。',

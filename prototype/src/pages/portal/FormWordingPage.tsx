@@ -30,7 +30,7 @@ const FORMS: {
     theme: 'vendor',
     name: 'Vendor / contractor',
     eyebrow: { en: 'Vendor / Contractor', zh: '供應商 / 承辦商' },
-    title: { en: 'On site registration', zh: '現場登記' },
+    title: { en: 'On-Site Registration', zh: '現場登記' },
   },
 ];
 
