@@ -6,7 +6,7 @@ import { resetDemoData } from '../data/store';
 
 const FORMS = [
   { to: '/register/guest', theme: 'prereg', eyebrow: 'Guest', title: 'Pre-registration', text: 'QR sent to the guest before the visit.' },
-  { to: '/register/guest-adhoc', theme: 'adhoc', eyebrow: 'Guest', title: 'On-site registration', text: 'QR on show at reception for walk-in guests.' },
+  { to: '/register/guest-adhoc', theme: 'adhoc', eyebrow: 'Guest', title: 'On-Site Registration', text: 'QR on show at reception for walk-in guests.' },
   { to: '/register/vendor', theme: 'vendor', eyebrow: 'Vendor / Contractor', title: 'On-Site Registration', text: 'QR on show at reception for vendors.' },
 ];
 

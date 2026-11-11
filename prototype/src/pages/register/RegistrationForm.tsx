@@ -33,7 +33,7 @@ const VARIANTS: Record<RegistrationType, {
   'guest-adhoc': {
     theme: 'adhoc',
     eyebrow: { en: 'Guest', zh: '訪客' },
-    title: { en: 'On-site registration', zh: '即場登記' },
+    title: { en: 'On-Site Registration', zh: '即場登記' },
     successText: {
       en: 'Your visit has been registered.',
       zh: '您的到訪已登記。',

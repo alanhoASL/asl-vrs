@@ -28,15 +28,24 @@ export function PublicPage({
       <a href="#main-content" className="skip-link">{skipLinkLabel}</a>
       <header className="public-header">
         <BrandLogo />
-        <span className="public-header__sub">{headerLabel}</span>
+        {theme === 'tea' ? (
+          <p className="eyebrow public-header__eyebrow">
+            <span className="eyebrow__dot" aria-hidden="true" />
+            {eyebrow}
+          </p>
+        ) : (
+          <span className="public-header__sub">{headerLabel}</span>
+        )}
       </header>
       <main id="main-content" className="public-main" tabIndex={-1}>
         <section className="form-card" aria-labelledby="page-title" aria-describedby="page-subtitle">
           <div className="form-card__head">
-            <p className="eyebrow">
-              <span className="eyebrow__dot" aria-hidden="true" />
-              {eyebrow}
-            </p>
+            {theme !== 'tea' && (
+              <p className="eyebrow">
+                <span className="eyebrow__dot" aria-hidden="true" />
+                {eyebrow}
+              </p>
+            )}
             <h1 id="page-title" className="form-card__title">{title}</h1>
             <p id="page-subtitle" className="form-card__subtitle">{subtitle}</p>
           </div>

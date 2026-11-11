@@ -23,7 +23,7 @@ const FORMS: {
     theme: 'adhoc',
     name: 'Guest on-site registration',
     eyebrow: { en: 'Guest', zh: '訪客' },
-    title: { en: 'On-site registration', zh: '即場登記' },
+    title: { en: 'On-Site Registration', zh: '即場登記' },
   },
   {
     id: 'vendor',

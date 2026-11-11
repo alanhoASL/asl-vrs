@@ -21,7 +21,6 @@ function parsePreviewTime(value: string | null): number | null {
 const inputIdFor = (id: string) => `qty-${id}`;
 const emptyQuantities = () => Object.fromEntries(DRINKS.map((d) => [d.id, 0])) as Record<string, number>;
 
-const headerLabel = <Bi en="Visitor registration" zh="訪客登記" />;
 const skipLinkLabel = <Bi en="Skip to main content" zh="跳至主要內容" />;
 const eyebrow = <Bi en="Tea Service" zh="茶水服務" />;
 
@@ -104,7 +103,6 @@ export function TeaOrderPage() {
         title={<Bi en="Room not found" zh="找不到會議室" stack />}
         subtitle={<Bi en="This tea order link is not valid." zh="此訂購連結無效。" stack />}
         documentTitle="Room not found 找不到會議室"
-        headerLabel={headerLabel}
         skipLinkLabel={skipLinkLabel}
       >
         <p><Bi en="Please ask reception for help." zh="請向接待處查詢。" stack /></p>
@@ -160,7 +158,6 @@ export function TeaOrderPage() {
         <Bi en={`Tea service hours ${TEA_SERVICE_HOURS_EN}`} zh={`茶水服務時間 ${TEA_SERVICE_HOURS_ZH}`} stack />
       )}
       documentTitle={`${room.name} ${room.nameZh}`}
-      headerLabel={headerLabel}
       skipLinkLabel={skipLinkLabel}
     >
       {sent ? (
