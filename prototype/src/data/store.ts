@@ -266,16 +266,48 @@ export function markAllNotificationsRead(accountId: string) {
   }));
 }
 
-/** Closing a tea popup also marks it read for that account. */
-export function closeTeaPopup(id: string, accountId: string) {
-  commit((s) => ({
-    ...s,
-    notifications: s.notifications.map((n) => (n.id !== id ? n : {
-      ...n,
-      popupClosedBy: n.popupClosedBy.includes(accountId) ? n.popupClosedBy : [...n.popupClosedBy, accountId],
-      readBy: n.readBy.includes(accountId) ? n.readBy : [...n.readBy, accountId],
-    })),
-  }));
+/** Reception has taken the order. It does not pop up again for anyone. */
+export function confirmTeaOrder(orderId: string, account: Account) {
+  const now = new Date().toISOString();
+  commit((s) => {
+    const next: AppState = {
+      ...s,
+      teaOrders: s.teaOrders.map((order) => (order.id === orderId && !order.confirmedAt
+        ? { ...order, confirmedAt: now, confirmedBy: account.displayName }
+        : order)),
+      notifications: s.notifications.map((n) => (n.teaOrderId !== orderId ? n : {
+        ...n,
+        readBy: n.readBy.includes(account.id) ? n.readBy : [...n.readBy, account.id],
+        popupClosedBy: n.popupClosedBy.includes(account.id) ? n.popupClosedBy : [...n.popupClosedBy, account.id],
+      })),
+    };
+    return appendAudit(next, account, 'Confirm tea order', { detail: orderId });
+  });
+}
+
+/** Reception completes or corrects the vendor purpose and floor after the public form is submitted. */
+export function updateVendorVisit(
+  registrationId: string,
+  patch: { purpose: string; floor: string },
+  account: Account,
+) {
+  const purpose = patch.purpose.trim();
+  const floor = patch.floor.trim();
+  if (!purpose) return false;
+  commit((s) => {
+    const current = s.registrations.find((r) => r.id === registrationId && r.type === 'vendor');
+    if (!current) return s;
+    const next: AppState = {
+      ...s,
+      registrations: s.registrations.map((r) => (r.id !== registrationId ? r : {
+        ...r,
+        purpose,
+        floor: floor || undefined,
+      })),
+    };
+    return appendAudit(next, account, 'Update visit', { registrationId, detail: purpose });
+  });
+  return true;
 }
 
 export function resetDemoData() {

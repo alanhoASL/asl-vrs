@@ -4,6 +4,7 @@ import { PublicPage } from '../../components/PublicPage';
 import { ErrorSummary, type FieldError } from '../../components/ErrorSummary';
 import { Bi } from '../../components/Bi';
 import { DRINK_CATEGORIES, DRINKS, ROOMS, TEA_SERVICE_HOURS_EN, TEA_SERVICE_HOURS_ZH, isTeaServiceOpen } from '../../data/catalog';
+import { useTeaPrompt } from '../../data/formCopy';
 import { submitTeaOrder } from '../../data/store';
 import { useDemoSettings } from '../../data/demoSettings';
 import { minutesOfDay } from '../../lib/date';
@@ -22,7 +23,7 @@ const emptyQuantities = () => Object.fromEntries(DRINKS.map((d) => [d.id, 0])) a
 
 const headerLabel = <Bi en="Visitor registration" zh="訪客登記" />;
 const skipLinkLabel = <Bi en="Skip to main content" zh="跳至主要內容" />;
-const eyebrow = <Bi en="Tea service" zh="茶水服務" />;
+const eyebrow = <Bi en="Tea Service" zh="茶水服務" />;
 
 interface StepperProps {
   inputId: string;
@@ -79,11 +80,12 @@ export function TeaOrderPage() {
   const [params] = useSearchParams();
   const now = useNow(15000);
   const { enforceTeaHours } = useDemoSettings();
+  const teaPrompt = useTeaPrompt();
   const previewMinutes = parsePreviewTime(params.get('time'));
   const currentMinutes = previewMinutes ?? minutesOfDay(now);
   // A ?time= preview always applies the hours, so the closed page can be shown whatever the demo switch says.
   const applyHours = previewMinutes !== null || enforceTeaHours;
-  const serviceOpen = !applyHours || isTeaServiceOpen(currentMinutes);
+  const serviceOpen = !applyHours || isTeaServiceOpen(currentMinutes, now);
 
   const [quantities, setQuantities] = useState<Record<string, number>>(emptyQuantities);
   const [errors, setErrors] = useState<FieldError[]>([]);
@@ -153,11 +155,7 @@ export function TeaOrderPage() {
       eyebrow={eyebrow}
       title={<Bi en={room.name} zh={room.nameZh} stack />}
       subtitle={serviceOpen || sent ? (
-        <Bi
-          en="Choose drinks for this room. Reception will arrange them with the pantry."
-          zh="請為本會議室選擇飲品，接待處會安排茶水間準備。"
-          stack
-        />
+        <Bi en={teaPrompt.en} zh={teaPrompt.zh} stack />
       ) : (
         <Bi en={`Tea service hours ${TEA_SERVICE_HOURS_EN}`} zh={`茶水服務時間 ${TEA_SERVICE_HOURS_ZH}`} stack />
       )}
@@ -191,7 +189,7 @@ export function TeaOrderPage() {
             </svg>
           </div>
           <h2 className="success-view__title">
-            <Bi en="Tea service is closed" zh="茶水服務現已暫停" stack />
+            <Bi en="Tea service is currently unavailable" zh="茶水服務供應時間已結束" stack />
           </h2>
           <p className="success-view__text">
             <Bi en="Please contact reception if you need help." zh="如需協助，請聯絡接待處。" stack />
@@ -240,14 +238,6 @@ export function TeaOrderPage() {
                                   <path d="M7 20c1.6-1.4 1.6-2.6 0-4s-1.6-2.6 0-4 1.6-2.6 0-4 1.6-2.6 0-4" />
                                   <path d="M12 20c1.6-1.4 1.6-2.6 0-4s-1.6-2.6 0-4 1.6-2.6 0-4 1.6-2.6 0-4" />
                                   <path d="M17 20c1.6-1.4 1.6-2.6 0-4s-1.6-2.6 0-4 1.6-2.6 0-4 1.6-2.6 0-4" />
-                                </svg>
-                              </span>
-                            )}
-                            {d.id === 'cold-water' && (
-                              <span className="drink-card__mark drink-card__mark--cold" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M12 2.5v19M3.2 7.2l17.6 9.6M20.8 7.2L3.2 16.8" />
-                                  <path d="M12 6.2L9.8 4.2M12 6.2l2.2-2M12 17.8l-2.2 2M12 17.8l2.2 2M7.4 9.4L5 7.8M7.4 9.4l.4-2.8M16.6 14.6l2.4 1.6M16.6 14.6l-.4 2.8M16.6 9.4l2.4-1.6M16.6 9.4l-.4-2.8M7.4 14.6L5 16.2M7.4 14.6l.4 2.8" />
                                 </svg>
                               </span>
                             )}

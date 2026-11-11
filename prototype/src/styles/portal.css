@@ -33,18 +33,11 @@
   border-radius: 10px;
 }
 
-.portal-brand__mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: linear-gradient(145deg, #2b6293, #1d4469);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+.portal-brand__logo {
+  display: block;
+  height: 48px;
+  width: auto;
+  max-width: 180px;
 }
 
 .portal-brand__text {
@@ -177,6 +170,39 @@
   margin-inline: auto;
 }
 
+.wording-extra {
+  max-width: 560px;
+  margin: 0 auto 22px;
+  padding: 18px 22px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.wording-extra__title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.wording-extra__lead {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.wording-extra__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.wording-extra .brand-logo {
+  margin-top: 12px;
+}
+
 .wording-stage .eyebrow__dot {
   width: 16px;
   height: 16px;
@@ -272,6 +298,14 @@
 .purpose-item__remove {
   height: 44px;
   margin-bottom: 0;
+}
+
+.purpose-item__specify {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
 }
 
 .purpose-editor__add {
@@ -500,6 +534,12 @@
   font-size: 15px;
   font-weight: 700;
   margin-bottom: 10px;
+}
+
+.drawer__note {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
 .visitor-list {

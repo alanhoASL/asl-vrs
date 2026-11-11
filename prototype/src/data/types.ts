@@ -58,6 +58,9 @@ export interface TeaOrder {
   lines: TeaLine[];
   note?: string;
   createdAt: string;
+  /** Set when a receptionist confirms the popup. The order does not pop up again. */
+  confirmedAt?: string;
+  confirmedBy?: string;
 }
 
 export type NotificationKind = 'registration' | 'tea';
@@ -75,7 +78,7 @@ export interface AppNotification {
   popupClosedBy: string[];
 }
 
-export type AuditAction = 'Sign in' | 'Sign out' | 'Confirm' | 'Dismiss' | 'Print label' | 'Reprint label';
+export type AuditAction = 'Sign in' | 'Sign out' | 'Confirm' | 'Dismiss' | 'Print label' | 'Reprint label' | 'Update visit' | 'Confirm tea order';
 
 export interface AuditEntry {
   id: string;

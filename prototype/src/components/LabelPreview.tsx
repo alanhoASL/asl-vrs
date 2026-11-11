@@ -1,4 +1,5 @@
 import type { Registration, Visitor } from '../data/types';
+import { useSiteLogo } from '../data/siteLogo';
 import { formatDate } from '../lib/date';
 
 /**
@@ -8,6 +9,7 @@ import { formatDate } from '../lib/date';
 export function LabelPreview({ registration, visitor }: { registration: Registration; visitor: Visitor }) {
   const isVendor = registration.type === 'vendor';
   const role = isVendor ? 'CONTRACTOR' : 'VISITOR';
+  const logo = useSiteLogo();
   return (
     <figure className="label-figure" id="label-preview" aria-labelledby="label-caption">
       <div className={`badge-shell badge-shell--${isVendor ? 'contractor' : 'visitor'}`}>
@@ -43,10 +45,8 @@ export function LabelPreview({ registration, visitor }: { registration: Registra
         <div className="badge-shell__brand">
           <img
             className="badge-shell__logo"
-            src={`${import.meta.env.BASE_URL}badge/asl-logo.png`}
+            src={logo}
             alt="ASL"
-            width={1132}
-            height={455}
           />
           <p className="badge-shell__role">{role}</p>
         </div>

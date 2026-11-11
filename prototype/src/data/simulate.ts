@@ -3,7 +3,7 @@ import { purposeEnglishLabels } from './formCopy';
 import { FLOORS, GUEST_COMPANIES, HOSTS, VENDOR_COMPANIES, VISITOR_NAMES } from './seed';
 import { submitRegistration, submitTeaOrder } from './store';
 import type { RegistrationType, TeaLine } from './types';
-import { addDays, formatDateTime, minutesOfDay, startOfDay } from '../lib/date';
+import { addDays, formatDateTime, isOfficeDay, minutesOfDay, startOfDay } from '../lib/date';
 
 /** Prototype-only: creates the same records a visitor's phone would, for live demos. */
 
@@ -23,15 +23,22 @@ function pickNames(count: number): string[] {
   return [...names];
 }
 
-/** Next half-hour slot at least an hour away and inside office hours, rolling over to tomorrow. */
+function nextWeekday(day: Date): Date {
+  let next = startOfDay(day);
+  while (!isOfficeDay(next)) next = addDays(next, 1);
+  return next;
+}
+
+/** Next half-hour slot at least an hour away, on a weekday inside office hours. */
 function nextPlannedSlot(now: Date): Date {
   const earliest = minutesOfDay(now) + 60;
   const slot = Math.ceil(earliest / 30) * 30;
-  if (slot >= OFFICE_HOURS.start && slot <= OFFICE_HOURS.end) {
-    return new Date(startOfDay(now).getTime() + slot * 60000);
+  const today = startOfDay(now);
+  if (isOfficeDay(today) && slot >= OFFICE_HOURS.start && slot <= OFFICE_HOURS.end) {
+    return new Date(today.getTime() + slot * 60000);
   }
-  const tomorrow = addDays(startOfDay(now), 1);
-  return new Date(tomorrow.getTime() + (OFFICE_HOURS.start + between(1, 12) * 30) * 60000);
+  const day = nextWeekday(addDays(today, 1));
+  return new Date(day.getTime() + (OFFICE_HOURS.start + between(1, 12) * 30) * 60000);
 }
 
 export function simulateRegistration(type: RegistrationType): string {
@@ -43,7 +50,7 @@ export function simulateRegistration(type: RegistrationType): string {
     type,
     company,
     hostStaff: pick(HOSTS),
-    hostContact: hostPhone(),
+    hostContact: type === 'guest-adhoc' ? '' : hostPhone(),
     plannedAt,
     purpose: isVendor ? pick(purposeEnglishLabels()) : undefined,
     floor: isVendor && Math.random() < 0.7 ? pick(FLOORS) : undefined,
@@ -54,7 +61,7 @@ export function simulateRegistration(type: RegistrationType): string {
   });
   return plannedAt
     ? `Pre-registration from ${company} for ${formatDateTime(plannedAt)}.`
-    : `${isVendor ? 'Vendor' : 'Ad hoc guest'} registration from ${company}.`;
+    : `${isVendor ? 'Vendor' : 'On-site guest'} registration from ${company}.`;
 }
 
 export function simulateTeaOrder(): string {

@@ -1,10 +1,12 @@
 import type { Account, RegistrationType, VisitorStatus } from './types';
-import { minutesToTime } from '../lib/date';
+import { isOfficeDay, minutesToTime } from '../lib/date';
 
 export const SITE_NAME = 'ASL';
 
-/** Minutes from midnight. */
+/** Minutes from midnight. Office days are Monday to Friday. */
 export const OFFICE_HOURS = { start: 9 * 60, end: 17 * 60 + 30 };
+export const OFFICE_DAYS_EN = 'Mon – Fri';
+export const OFFICE_DAYS_ZH = '星期一至五';
 
 export interface ServiceWindow {
   /** Minutes from midnight, inclusive. */
@@ -19,15 +21,16 @@ export const TEA_SERVICE_HOURS: ServiceWindow[] = [
   { start: 14 * 60, end: 16 * 60 + 45 },
 ];
 
-export const TEA_SERVICE_HOURS_EN = TEA_SERVICE_HOURS
+export const TEA_SERVICE_HOURS_EN = `${OFFICE_DAYS_EN}, ${TEA_SERVICE_HOURS
   .map((w) => `${minutesToTime(w.start)} - ${minutesToTime(w.end)}`)
-  .join(', ');
+  .join(', ')}`;
 
-export const TEA_SERVICE_HOURS_ZH = TEA_SERVICE_HOURS
+export const TEA_SERVICE_HOURS_ZH = `${OFFICE_DAYS_ZH} ${TEA_SERVICE_HOURS
   .map((w) => `${minutesToTime(w.start)} 至 ${minutesToTime(w.end)}`)
-  .join('、');
+  .join('、')}`;
 
-export function isTeaServiceOpen(minutes: number): boolean {
+export function isTeaServiceOpen(minutes: number, day: Date = new Date()): boolean {
+  if (!isOfficeDay(day)) return false;
   return TEA_SERVICE_HOURS.some((w) => minutes >= w.start && minutes < w.end);
 }
 
@@ -48,7 +51,7 @@ export const ACCOUNTS: Account[] = [
 
 export const TYPE_LABELS: Record<RegistrationType, { short: string; long: string; group: string }> = {
   'guest-prereg': { short: 'Pre-reg', long: 'Guest pre-registration', group: 'Guest' },
-  'guest-adhoc': { short: 'Ad hoc', long: 'Guest ad hoc', group: 'Guest' },
+  'guest-adhoc': { short: 'On-site', long: 'Guest on-site', group: 'Guest' },
   vendor: { short: 'Vendor', long: 'Vendor / contractor', group: 'Vendor' },
 };
 
@@ -66,10 +69,18 @@ export interface Room {
 }
 
 export const ROOMS: Room[] = [
-  { id: 'board-room-a', name: 'Board Room A', nameZh: '董事會議室 A' },
-  { id: 'conference-12a', name: 'Conference Room 12A', nameZh: '會議室 12A' },
-  { id: 'conference-12b', name: 'Conference Room 12B', nameZh: '會議室 12B' },
-  { id: 'meeting-15', name: 'Meeting Room 15/F', nameZh: '15樓會議室' },
+  { id: 'acoe-15', name: 'ACoE (15/F)', nameZh: 'ACoE（15樓）' },
+  { id: 'c1-15', name: 'C1 (15/F)', nameZh: 'C1（15樓）' },
+  { id: 'c2-15', name: 'C2 (15/F)', nameZh: 'C2（15樓）' },
+  { id: 'c3-16', name: 'C3 (16/F)', nameZh: 'C3（16樓）' },
+  { id: 'c4-16', name: 'C4 (16/F)', nameZh: 'C4（16樓）' },
+  { id: 'c5-10', name: 'C5 (10/F)', nameZh: 'C5（10樓）' },
+  { id: 'm1-15', name: 'M1 (15/F)', nameZh: 'M1（15樓）' },
+  { id: 'm2-15', name: 'M2 (15/F)', nameZh: 'M2（15樓）' },
+  { id: 'm3-15', name: 'M3 (15/F)', nameZh: 'M3（15樓）' },
+  { id: 'm4-15', name: 'M4 (15/F)', nameZh: 'M4（15樓）' },
+  { id: 'm5-16', name: 'M5 (16/F)', nameZh: 'M5（16樓）' },
+  { id: 'm6-16', name: 'M6 (16/F)', nameZh: 'M6（16樓）' },
 ];
 
 export interface DrinkCategory {
@@ -104,14 +115,13 @@ export const DRINK_CATEGORIES: DrinkCategory[] = [
 ];
 
 export const DRINKS: Drink[] = [
-  { id: 'warm-water', categoryId: 'water', name: 'Warm Water', nameZh: '暖水', note: '', noteZh: '', unit: 'glass', unitZh: '杯', image: photo('water.jpg') },
-  { id: 'cold-water', categoryId: 'water', name: 'Cold Water', nameZh: '凍水', note: '', noteZh: '', unit: 'glass', unitZh: '杯', image: photo('water.jpg') },
-  { id: 'ambient-water', categoryId: 'water', name: 'Ambient Water', nameZh: '常溫水', note: '', noteZh: '', unit: 'glass', unitZh: '杯', image: photo('water.jpg') },
+  { id: 'warm-water', categoryId: 'water', name: 'Warm Water', nameZh: '暖水', note: '', noteZh: '', unit: 'glass', unitZh: '杯', image: photo('water-glass.jpg') },
+  { id: 'ambient-water', categoryId: 'water', name: 'Ambient Water', nameZh: '常溫水', note: '', noteZh: '', unit: 'glass', unitZh: '杯', image: photo('water-glass.jpg') },
   { id: 'hot-chinese-tea', categoryId: 'hot', name: 'Hot Chinese Tea', nameZh: '熱中國茶', note: '', noteZh: '', unit: 'mug', unitZh: '杯', image: photo('chinese-tea.jpg') },
-  { id: 'hot-coffee', categoryId: 'hot', name: 'Hot Coffee', nameZh: '熱咖啡', note: 'Sugar on the side', noteZh: '糖另上', unit: 'mug', unitZh: '杯', image: photo('coffee-with-milk.jpg') },
+  { id: 'hot-coffee', categoryId: 'hot', name: 'Hot Coffee', nameZh: '熱咖啡', note: 'Sugar on the side', noteZh: '糖另上', unit: 'mug', unitZh: '杯', image: photo('coffee-light.jpg') },
   { id: 'hot-black-coffee', categoryId: 'hot', name: 'Hot Black Coffee', nameZh: '熱齋啡', note: '', noteZh: '', unit: 'mug', unitZh: '杯', image: photo('coffee.jpg') },
   { id: 'hot-tea-milk', categoryId: 'hot', name: 'Hot Tea with Milk', nameZh: '熱奶茶', note: 'Sugar on the side', noteZh: '糖另上', unit: 'mug', unitZh: '杯', image: photo('hk-milk-tea.jpg') },
-  { id: 'hot-black-tea', categoryId: 'hot', name: 'Hot Black Tea', nameZh: '熱紅茶', note: '', noteZh: '', unit: 'mug', unitZh: '杯', image: photo('english-breakfast.jpg') },
+  { id: 'hot-black-tea', categoryId: 'hot', name: 'Hot Black Tea', nameZh: '熱紅茶', note: '', noteZh: '', unit: 'mug', unitZh: '杯', image: photo('black-tea.jpg') },
 ];
 
 export const MAX_VISITORS = 10;

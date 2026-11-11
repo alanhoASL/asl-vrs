@@ -37,6 +37,12 @@ export function minutesOfDay(d: Date): number {
   return d.getHours() * 60 + d.getMinutes();
 }
 
+/** Monday to Friday. */
+export function isOfficeDay(d: Date): boolean {
+  const day = d.getDay();
+  return day !== 0 && day !== 6;
+}
+
 /** 1005 -> "16:45" */
 export function minutesToTime(minutes: number): string {
   return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { TextField } from '../components/TextField';
+import { BrandLogo } from '../components/BrandLogo';
 import { ACCOUNTS } from '../data/catalog';
 
 export function LoginPage() {
@@ -41,7 +42,7 @@ export function LoginPage() {
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <main id="main-content" className="login-main" tabIndex={-1}>
         <section className="login-card" aria-labelledby="login-title">
-          <span className="brand">ASL</span>
+          <BrandLogo />
           <h1 id="login-title" className="login-card__title">Staff sign in</h1>
           <p className="login-card__subtitle">Visitor Registration System</p>
 

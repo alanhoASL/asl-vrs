@@ -75,7 +75,7 @@ export function DemoMenu() {
             </button>
             <button type="button" className="demo-menu__item" onClick={() => run(() => simulateRegistration('guest-adhoc'))} id="demo-reg-adhoc">
               <span className="demo-menu__dot demo-menu__dot--adhoc" aria-hidden="true" />
-              Guest ad hoc
+              Guest on-site
             </button>
             <button type="button" className="demo-menu__item" onClick={() => run(() => simulateRegistration('vendor'))} id="demo-reg-vendor">
               <span className="demo-menu__dot demo-menu__dot--vendor" aria-hidden="true" />

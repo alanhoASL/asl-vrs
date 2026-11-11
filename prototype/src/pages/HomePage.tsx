@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { ACCOUNTS, ROOMS, TEA_SERVICE_HOURS_EN } from '../data/catalog';
+import { BrandLogo } from '../components/BrandLogo';
 import { resetDemoData } from '../data/store';
 
 const FORMS = [
   { to: '/register/guest', theme: 'prereg', eyebrow: 'Guest', title: 'Pre-registration', text: 'QR sent to the guest before the visit.' },
-  { to: '/register/guest-adhoc', theme: 'adhoc', eyebrow: 'Guest', title: 'Ad hoc registration', text: 'QR on show at reception for walk-in guests.' },
+  { to: '/register/guest-adhoc', theme: 'adhoc', eyebrow: 'Guest', title: 'On-site registration', text: 'QR on show at reception for walk-in guests.' },
   { to: '/register/vendor', theme: 'vendor', eyebrow: 'Vendor / Contractor', title: 'On site registration', text: 'QR on show at reception for vendors.' },
 ];
 
@@ -21,7 +22,7 @@ export function HomePage() {
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <main id="main-content" className="hub__main" tabIndex={-1}>
         <header className="hub__header">
-          <span className="brand">ASL</span>
+          <BrandLogo />
           <h1 className="hub__title">Visitor Registration System</h1>
           <p className="hub__lead">
             Clickable prototype with dummy data. Data is kept in this browser only. Open a form or tea page in a second

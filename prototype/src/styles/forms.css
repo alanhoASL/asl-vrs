@@ -7,8 +7,8 @@
 
 .public-header {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
   padding: 18px 20px 0;
   max-width: 560px;
   width: 100%;
@@ -379,10 +379,6 @@
 
 .drink-card__mark--warm {
   color: #d92d20;
-}
-
-.drink-card__mark--cold {
-  color: #2b6cb0;
 }
 
 .drink-card__badge {

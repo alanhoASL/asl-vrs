@@ -6,7 +6,7 @@ import type {
 import { DEFAULT_PURPOSES } from './formCopy';
 import { describeRegistration, describeTeaOrder, registrationTitle } from './describe';
 
-export const STATE_VERSION = 4;
+export const STATE_VERSION = 5;
 
 export const VISITOR_NAMES = [
   'Alex Lee', 'Karen Lau', 'Michael Cheung', 'Ivy Ho', 'Kelvin Ng', 'Grace Tse', 'Raymond Yip', 'Cindy Leung',
@@ -25,7 +25,7 @@ export const VENDOR_COMPANIES = [
   'Harbour Engineering Ltd', 'Dragon Fire Safety', 'Metro Network Cabling', 'Green Pest Control',
 ];
 
-export const VENDOR_WORK = DEFAULT_PURPOSES.map((item) => item.en);
+export const VENDOR_WORK = DEFAULT_PURPOSES.filter((item) => !item.specify).map((item) => item.en);
 
 export const HOSTS = ['Jamie Chan', 'Daniel Lam', 'Fiona Yeung', 'Henry Choi', 'Queenie Mak', 'Oscar Wong', 'Stella Ip'];
 export const FLOORS = ['12/F', '15/F', '8/F', 'G/F', '20/F', '3/F'];
@@ -153,7 +153,7 @@ export function createSeedState(now: Date = new Date()): AppState {
       type,
       company: type === 'vendor' ? pick(VENDOR_COMPANIES) : pick(GUEST_COMPANIES),
       hostStaff: pick(HOSTS),
-      hostContact: hostPhone(),
+      hostContact: type === 'guest-adhoc' ? '' : hostPhone(),
       visitAt: visitAt.toISOString(),
       submittedAt: submittedAt.toISOString(),
       visitors,
@@ -237,6 +237,8 @@ export function createSeedState(now: Date = new Date()): AppState {
         lines,
         note: rand() < 0.25 ? 'Less sugar please' : undefined,
         createdAt: createdAt.toISOString(),
+        confirmedAt: createdAt.toISOString(),
+        confirmedBy: reception.displayName,
       });
     }
   }

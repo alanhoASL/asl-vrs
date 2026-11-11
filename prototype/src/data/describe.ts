@@ -6,7 +6,7 @@ export function registrationTitle(type: RegistrationType): string {
     case 'guest-prereg':
       return 'New guest pre-registration';
     case 'guest-adhoc':
-      return 'New ad hoc guest at reception';
+      return 'New on-site guest at reception';
     case 'vendor':
       return 'New vendor / contractor at reception';
   }

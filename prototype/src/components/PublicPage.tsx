@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { BrandLogo } from './BrandLogo';
 
 interface Props {
   theme: 'prereg' | 'adhoc' | 'vendor' | 'tea';
@@ -26,7 +27,7 @@ export function PublicPage({
     <div className={`public-page theme-${theme}`}>
       <a href="#main-content" className="skip-link">{skipLinkLabel}</a>
       <header className="public-header">
-        <span className="brand">ASL</span>
+        <BrandLogo />
         <span className="public-header__sub">{headerLabel}</span>
       </header>
       <main id="main-content" className="public-main" tabIndex={-1}>

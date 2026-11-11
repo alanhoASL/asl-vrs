@@ -4,6 +4,7 @@ import { NotificationBell } from '../../components/NotificationBell';
 import { TeaPopups } from '../../components/TeaPopups';
 import { DemoMenu } from '../../components/DemoMenu';
 import { CalendarIcon, ReportIcon, SignOutIcon, VisitorsIcon, WordingIcon } from '../../components/icons';
+import { BrandLogo } from '../../components/BrandLogo';
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
 
@@ -17,7 +18,7 @@ export function PortalLayout() {
       <header className="portal-header">
         <div className="portal-header__inner">
           <Link to="/portal" className="portal-brand" id="portal-brand">
-            <span className="portal-brand__mark" aria-hidden="true">ASL</span>
+            <BrandLogo className="portal-brand__logo" />
             <span className="portal-brand__text">
               <span className="portal-brand__name">Visitor Registration</span>
               <span className="portal-brand__sub">Staff portal</span>

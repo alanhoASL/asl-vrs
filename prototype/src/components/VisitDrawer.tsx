@@ -3,7 +3,8 @@ import { Modal } from './Modal';
 import { DismissVisitorsDialog, PrintLabelsDialog, type DismissRequest, type PrintRequest } from './VisitorActionDialogs';
 import { useAccount } from '../auth/AuthContext';
 import { STATUS_LABELS, TYPE_LABELS } from '../data/catalog';
-import { confirmVisitor, confirmVisitors, dismissVisitors, printVisitorLabels } from '../data/store';
+import { confirmVisitor, confirmVisitors, dismissVisitors, printVisitorLabels, updateVendorVisit } from '../data/store';
+import { joinPurpose, splitPurpose, usePurposeOptions } from '../data/formCopy';
 import { canConfirm, canDismiss, canPrint } from '../data/visitorRules';
 import type { Registration, Visitor } from '../data/types';
 import { formatDateTime } from '../lib/date';
@@ -153,7 +154,7 @@ export function VisitDrawer({ registration, open, onClose }: Props) {
 
             <dl className="detail-list">
               <div>
-                <dt>{registration.type === 'guest-prereg' ? 'Planned date / time' : 'Registered at'}</dt>
+                <dt>{registration.type === 'guest-prereg' ? 'Planned visit date / time' : 'Registered at'}</dt>
                 <dd>{formatDateTime(new Date(registration.visitAt))}</dd>
               </div>
               <div>
@@ -166,23 +167,13 @@ export function VisitDrawer({ registration, open, onClose }: Props) {
                   <dd>{registration.hostContact}</dd>
                 </div>
               )}
-              {isVendor && (
-                <>
-                  <div>
-                    <dt>Purpose / work</dt>
-                    <dd>{registration.purpose}</dd>
-                  </div>
-                  <div>
-                    <dt>Destination floor</dt>
-                    <dd>{registration.floor ?? <span className="muted">Not provided</span>}</dd>
-                  </div>
-                </>
-              )}
               <div>
                 <dt>Form submitted</dt>
                 <dd>{formatDateTime(new Date(registration.submittedAt))}</dd>
               </div>
             </dl>
+
+            {isVendor && <VendorVisitEditor registration={registration} />}
 
             <section aria-labelledby="visitors-heading" className="drawer__section">
               <h3 id="visitors-heading" className="drawer__section-title">
@@ -337,5 +328,117 @@ export function VisitDrawer({ registration, open, onClose }: Props) {
         onConfirm={handleDismiss}
       />
     </>
+  );
+}
+
+function VendorVisitEditor({ registration }: { registration: Registration }) {
+  const account = useAccount();
+  const purposes = usePurposeOptions();
+  const [purposeId, setPurposeId] = useState('');
+  const [detail, setDetail] = useState('');
+  const [floor, setFloor] = useState('');
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const purposeKey = purposes.map((item) => `${item.id}:${item.en}:${item.specify ? 1 : 0}`).join('|');
+
+  useEffect(() => {
+    const next = splitPurpose(registration.purpose, purposes);
+    setPurposeId(next.id || (registration.purpose ? '__current' : ''));
+    setDetail(next.detail);
+    setFloor(registration.floor ?? '');
+    setError('');
+  }, [registration.id, registration.purpose, registration.floor, purposeKey, purposes]);
+
+  const selected = purposes.find((item) => item.id === purposeId);
+  const nextPurpose = purposeId === '__current'
+    ? (registration.purpose ?? '')
+    : (selected ? joinPurpose(selected, detail) : '');
+  const changed = nextPurpose !== (registration.purpose ?? '') || floor.trim() !== (registration.floor ?? '');
+
+  const save = () => {
+    if (purposeId !== '__current' && !selected) {
+      setError('Select the purpose of work.');
+      setNotice('');
+      document.getElementById('vendor-purpose')?.focus();
+      return;
+    }
+    if (selected?.specify && !detail.trim()) {
+      setError('Describe the purpose of the work.');
+      setNotice('');
+      document.getElementById('vendor-purpose-detail')?.focus();
+      return;
+    }
+    const purpose = purposeId === '__current' ? (registration.purpose ?? '') : joinPurpose(selected!, detail);
+    if (!updateVendorVisit(registration.id, { purpose, floor }, account)) {
+      setError('Could not save these details.');
+      setNotice('');
+      return;
+    }
+    setError('');
+    setNotice('Saved the purpose of work and destination floor.');
+  };
+
+  return (
+    <section className="drawer__section" aria-labelledby="vendor-details-heading">
+      <h3 id="vendor-details-heading" className="drawer__section-title">Complete at reception</h3>
+      <p className="drawer__note" id="vendor-details-hint">
+        Reception can fill or correct the purpose of work and the destination floor after the vendor submits the form.
+      </p>
+      <div className="field">
+        <label className="field__label" htmlFor="vendor-purpose">
+          Purpose of work
+          <span className="req" aria-hidden="true">*</span>
+          <span className="sr-only"> (required)</span>
+        </label>
+        <select
+          id="vendor-purpose"
+          className="input"
+          value={purposeId}
+          aria-describedby={error ? 'vendor-details-error' : 'vendor-details-hint'}
+          onChange={(event) => { setPurposeId(event.target.value); setError(''); setNotice(''); }}
+        >
+          <option value="">Select the work</option>
+          {purposeId === '__current' && registration.purpose && (
+            <option value="__current">{registration.purpose}</option>
+          )}
+          {purposes.map((item) => (
+            <option key={item.id} value={item.id}>{`${item.en} ${item.zh}`}</option>
+          ))}
+        </select>
+      </div>
+      {selected?.specify && (
+        <div className="field">
+          <label className="field__label" htmlFor="vendor-purpose-detail">
+            Please specify
+            <span className="req" aria-hidden="true">*</span>
+            <span className="sr-only"> (required)</span>
+          </label>
+          <input
+            id="vendor-purpose-detail"
+            className="input"
+            maxLength={120}
+            value={detail}
+            aria-invalid={error && !detail.trim() ? true : undefined}
+            onChange={(event) => { setDetail(event.target.value); setError(''); setNotice(''); }}
+          />
+        </div>
+      )}
+      <div className="field">
+        <label className="field__label" htmlFor="vendor-floor">Destination floor</label>
+        <input
+          id="vendor-floor"
+          className="input"
+          maxLength={20}
+          value={floor}
+          placeholder="e.g. 12/F"
+          onChange={(event) => { setFloor(event.target.value); setNotice(''); }}
+        />
+      </div>
+      {error && <p id="vendor-details-error" className="field__error" role="alert">{error}</p>}
+      <button type="button" className="btn btn-primary btn-small" id="save-vendor-details" onClick={save} disabled={!changed && !error}>
+        Save details
+      </button>
+      <p className="wording-status" role="status" aria-live="polite">{notice}</p>
+    </section>
   );
 }
